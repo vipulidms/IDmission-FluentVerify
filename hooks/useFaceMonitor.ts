@@ -162,6 +162,8 @@ export function useFaceMonitor(
         const count = results.detections?.length ?? 0;
         setFaceCount(count);
 
+        let localIsLookingAway = false;
+
         if (count === 0) {
           setFaceStatus("absent");
           // Start absent timer if not already running
@@ -186,35 +188,63 @@ export function useFaceMonitor(
             setFaceStatus("multiple");
             onViolation("multiple_faces", `${count} faces detected in frame`);
           } else {
-            // Single face — check if looking down (reading from notes)
+            // Single face — check if looking down or looking away horizontally
             const detection = results.detections[0];
             const bbox = detection?.boundingBox;
+            const keypoints = detection?.keypoints;
+            let isLookingAway = false;
+            let lookingAwayDetail = "";
+
             if (bbox && video.videoHeight > 0) {
               const faceCenterYRatio = (bbox.originY + bbox.height / 2) / video.videoHeight;
               if (faceCenterYRatio > LOOKING_DOWN_THRESHOLD) {
-                setFaceStatus("looking_away");
-                onViolation("looking_away", `Face center at ${Math.round(faceCenterYRatio * 100)}% of frame`);
-              } else {
-                setFaceStatus("ok");
+                isLookingAway = true;
+                lookingAwayDetail = `Looking down (face center at ${Math.round(faceCenterYRatio * 100)}% of frame)`;
               }
+            }
+
+            // Check horizontal face turn using eye-nose symmetry ratio
+            if (!isLookingAway && keypoints && keypoints[0] && keypoints[1] && keypoints[2]) {
+              const eyeRight = keypoints[0]; // Right Eye
+              const eyeLeft = keypoints[1];  // Left Eye
+              const nose = keypoints[2];     // Nose Tip
+
+              const distRight = Math.abs(nose.x - eyeRight.x);
+              const distLeft = Math.abs(nose.x - eyeLeft.x);
+              const totalDist = distRight + distLeft;
+
+              if (totalDist > 0) {
+                const ratio = Math.max(distRight, distLeft) / totalDist;
+                // A ratio > 0.78 represents a significant head turn (nose is very close to one of the eyes horizontally)
+                if (ratio > 0.78) {
+                  isLookingAway = true;
+                  lookingAwayDetail = `Face turned sideways (symmetry ratio: ${Math.round(ratio * 100)}%)`;
+                }
+              }
+            }
+
+            if (isLookingAway) {
+              localIsLookingAway = true;
+              setFaceStatus("looking_away");
+              onViolation("looking_away", lookingAwayDetail);
             } else {
               setFaceStatus("ok");
             }
           }
         }
 
-        // Draw debug overlay on canvas (optional, shows detection box)
+        // Draw debug overlay on canvas (optional, shows detection box and keypoints)
         const canvas = canvasRef.current;
         if (canvas && results.detections?.length) {
           const ctx = canvas.getContext("2d");
           if (ctx) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            results.detections.forEach((d: { boundingBox?: { originX: number; originY: number; width: number; height: number } }) => {
+            results.detections.forEach((d: any) => {
               if (!d.boundingBox) return;
               const { originX, originY, width, height } = d.boundingBox;
               const scaleX = canvas.width / video.videoWidth;
               const scaleY = canvas.height / video.videoHeight;
-              ctx.strokeStyle = count > 1 ? "#f43f5e" : "#10b981";
+              ctx.strokeStyle = count > 1 ? "#f43f5e" : localIsLookingAway ? "#f97316" : "#10b981";
               ctx.lineWidth = 2;
               ctx.strokeRect(
                 originX * scaleX,
@@ -222,6 +252,19 @@ export function useFaceMonitor(
                 width * scaleX,
                 height * scaleY
               );
+
+              // Draw keypoints for eyes and nose
+              if (d.keypoints) {
+                // index 0: Right Eye, index 1: Left Eye, index 2: Nose Tip
+                d.keypoints.slice(0, 3).forEach((kp: any, idx: number) => {
+                  const x = kp.x * canvas.width;
+                  const y = kp.y * canvas.height;
+                  ctx.fillStyle = idx === 2 ? "#3b82f6" : "#ec4899"; // nose is blue, eyes are pink
+                  ctx.beginPath();
+                  ctx.arc(x, y, 3.5, 0, 2 * Math.PI);
+                  ctx.fill();
+                });
+              }
             });
           }
         }

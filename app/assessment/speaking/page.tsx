@@ -50,6 +50,8 @@ function SpeakingContent() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [webcamWidgetOpen, setWebcamWidgetOpen] = useState(true);
+  const [micEnabled, setMicEnabled] = useState(false);
+  const [permissionsError, setPermissionsError] = useState("");
 
   // ── Face monitor ─────────────────────────────────────────────────────────
   const { faceStatus, faceCount, cameraEnabled, modelLoading, initCamera, stopCamera } = useFaceMonitor(
@@ -58,6 +60,25 @@ function SpeakingContent() {
     assessmentActive,
     addViolation
   );
+
+  const requestCameraAndMic = async () => {
+    setPermissionsError("");
+    setError("");
+    
+    const camOk = await initCamera();
+    if (!camOk) {
+      setPermissionsError("Camera access was denied. Camera is required for integrity checks.");
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach((track) => track.stop());
+      setMicEnabled(true);
+    } catch (err) {
+      setPermissionsError("Microphone access was denied. Microphone is required for speaking tests.");
+    }
+  };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recognitionRef = useRef<any>(null);
@@ -341,67 +362,7 @@ function SpeakingContent() {
         </div>
       )}
 
-      {/* ── Webcam Preview Widget ─────────────────────────────────────────────── */}
-      {cameraEnabled && (
-        <div style={{ position: "fixed", bottom: "24px", right: "24px", zIndex: 8888, borderRadius: "16px", overflow: "hidden", boxShadow: "0 8px 40px rgba(0,0,0,0.6)", border: "1px solid rgba(255,255,255,0.1)", transition: "all 0.3s ease", width: webcamWidgetOpen ? "160px" : "48px", background: "rgba(10,14,39,0.95)" }}>
-          {/* Widget header */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 10px", background: "rgba(0,0,0,0.3)", borderBottom: webcamWidgetOpen ? "1px solid rgba(255,255,255,0.08)" : "none" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <span style={{ fontSize: "14px" }}>{faceDisplay.icon}</span>
-              {webcamWidgetOpen && (
-                <span style={{ fontSize: "10px", fontWeight: 700, color: faceDisplay.color, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                  {faceDisplay.label}
-                </span>
-              )}
-            </div>
-            <button
-              onClick={() => setWebcamWidgetOpen((o) => !o)}
-              style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: "12px", lineHeight: 1, padding: "2px" }}
-              title={webcamWidgetOpen ? "Minimize" : "Expand"}
-            >
-              {webcamWidgetOpen ? "−" : "□"}
-            </button>
-          </div>
-
-          {/* Video + canvas overlay - always mounted, but toggled via height & overflow to keep tracking running in background */}
-          <div style={{
-            position: "relative",
-            width: "160px",
-            height: webcamWidgetOpen ? "120px" : "0px",
-            overflow: "hidden",
-            transition: "height 0.3s ease",
-          }}>
-            <video
-              ref={videoRef}
-              style={{ width: "160px", height: "120px", objectFit: "cover", display: "block", transform: "scaleX(-1)" }}
-              muted
-              playsInline
-              autoPlay
-            />
-            <canvas
-              ref={canvasRef}
-              width={160}
-              height={120}
-              style={{ position: "absolute", inset: 0, width: "160px", height: "120px", transform: "scaleX(-1)", pointerEvents: "none" }}
-            />
-            {modelLoading && (
-              <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", color: "var(--text-muted)", flexDirection: "column", gap: "6px" }}>
-                <div className="spinner" style={{ width: "20px", height: "20px" }} />
-                <span>Loading AI...</span>
-              </div>
-            )}
-            {/* Status dot */}
-            <div style={{ position: "absolute", top: "6px", left: "6px", width: "8px", height: "8px", borderRadius: "50%", background: faceDisplay.color, boxShadow: `0 0 6px ${faceDisplay.color}` }} />
-          </div>
-
-          {/* Face count badge */}
-          {webcamWidgetOpen && faceCount > 0 && (
-            <div style={{ padding: "4px 10px", background: faceCount > 1 ? "rgba(244,63,94,0.2)" : "rgba(16,185,129,0.1)", fontSize: "10px", fontWeight: 600, color: faceCount > 1 ? "#f43f5e" : "#10b981", textAlign: "center" }}>
-              {faceCount} face{faceCount !== 1 ? "s" : ""} detected
-            </div>
-          )}
-        </div>
-      )}
+      {/* Webcam is centered dynamically above the content card */}
 
       <div className="container" style={{ paddingBottom: "80px" }}>
         <div className="breadcrumb" style={{ paddingTop: "32px" }}>
@@ -413,6 +374,91 @@ function SpeakingContent() {
         </div>
 
         <div style={{ maxWidth: "720px", margin: "0 auto" }}>
+
+          {/* ── Centered Webcam Preview Widget ── */}
+          {cameraEnabled && (phase === "intro" || phase === "prepare" || phase === "record") && (
+            <div style={{ 
+              display: "flex", 
+              flexDirection: "column", 
+              alignItems: "center", 
+              marginBottom: "24px",
+              marginTop: phase === "intro" ? "0" : "20px"
+            }}>
+              <div style={{ 
+                position: "relative", 
+                width: "200px", 
+                height: "150px", 
+                borderRadius: "16px", 
+                overflow: "hidden", 
+                boxShadow: "0 12px 36px rgba(0,0,0,0.5)", 
+                border: `2px solid ${faceDisplay.color}`, 
+                background: "rgba(10,14,39,0.95)",
+                transition: "border-color 0.3s ease"
+              }}>
+                <video
+                  ref={videoRef}
+                  style={{ width: "200px", height: "150px", objectFit: "cover", display: "block", transform: "scaleX(-1)" }}
+                  muted
+                  playsInline
+                  autoPlay
+                />
+                <canvas
+                  ref={canvasRef}
+                  width={200}
+                  height={150}
+                  style={{ position: "absolute", inset: 0, width: "200px", height: "150px", transform: "scaleX(-1)", pointerEvents: "none" }}
+                />
+                {modelLoading && (
+                  <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px", color: "var(--text-muted)", flexDirection: "column", gap: "8px" }}>
+                    <div className="spinner" style={{ width: "24px", height: "24px" }} />
+                    <span>Loading AI...</span>
+                  </div>
+                )}
+                {/* Status Dot */}
+                <div style={{ position: "absolute", top: "8px", left: "8px", width: "10px", height: "10px", borderRadius: "50%", background: faceDisplay.color, boxShadow: `0 0 8px ${faceDisplay.color}` }} />
+                
+                {/* Face Status text badge */}
+                <div style={{ 
+                  position: "absolute", 
+                  bottom: "8px", 
+                  left: "50%", 
+                  transform: "translateX(-50%)", 
+                  background: "rgba(10, 14, 39, 0.85)", 
+                  padding: "4px 10px", 
+                  borderRadius: "12px", 
+                  fontSize: "10px", 
+                  fontWeight: 700, 
+                  color: faceDisplay.color, 
+                  display: "flex", 
+                  alignItems: "center", 
+                  gap: "4px",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                  border: `1px solid ${faceDisplay.color}40`,
+                  backdropFilter: "blur(4px)"
+                }}>
+                  <span>{faceDisplay.icon}</span>
+                  <span>{faceDisplay.label}</span>
+                </div>
+              </div>
+              
+              {/* Face count overlay if multiple */}
+              {faceCount > 1 && (
+                <div style={{ 
+                  marginTop: "8px", 
+                  fontSize: "12px", 
+                  fontWeight: 600, 
+                  color: "#f43f5e", 
+                  background: "rgba(244,63,94,0.12)", 
+                  padding: "4px 12px", 
+                  borderRadius: "8px",
+                  border: "1px solid rgba(244,63,94,0.25)"
+                }}>
+                  ⚠️ {faceCount} faces detected
+                </div>
+              )}
+            </div>
+          )}
 
           {/* ── Loading ─────────────────────────────────────────────────────── */}
           {phase === "loading" && (
@@ -448,39 +494,40 @@ function SpeakingContent() {
                 </ul>
               </div>
 
-              {/* ── Webcam Permission Card ─────────────────────────────────── */}
-              <div style={{ padding: "24px 28px", marginBottom: "24px", borderRadius: "16px", background: cameraEnabled ? "rgba(16,185,129,0.07)" : "rgba(76,127,237,0.07)", border: cameraEnabled ? "1px solid rgba(16,185,129,0.25)" : "1px solid rgba(76,127,237,0.25)" }}>
+              {/* ── Camera & Microphone Permission Setup Card ─────────────────── */}
+              <div style={{ padding: "24px 28px", marginBottom: "24px", borderRadius: "16px", background: (cameraEnabled && micEnabled) ? "rgba(16,185,129,0.07)" : "rgba(76,127,237,0.07)", border: (cameraEnabled && micEnabled) ? "1px solid rgba(16,185,129,0.25)" : "1px solid rgba(76,127,237,0.25)" }}>
                 <div style={{ display: "flex", alignItems: "flex-start", gap: "16px" }}>
-                  <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: cameraEnabled ? "rgba(16,185,129,0.15)" : "rgba(76,127,237,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "22px", flexShrink: 0 }}>
-                    {cameraEnabled ? "✅" : "📷"}
+                  <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: (cameraEnabled && micEnabled) ? "rgba(16,185,129,0.15)" : "rgba(76,127,237,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "22px", flexShrink: 0 }}>
+                    {(cameraEnabled && micEnabled) ? "✅" : "📷"}
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 700, fontSize: "16px", marginBottom: "6px" }}>
-                      {cameraEnabled ? "Camera Enabled — Monitoring Active" : "Enable Camera Monitoring"}
+                      {(cameraEnabled && micEnabled) ? "Camera & Microphone Ready" : "Setup Camera & Microphone"}
                     </div>
                     <p className="text-secondary" style={{ fontSize: "13px", lineHeight: 1.6, marginBottom: "14px" }}>
-                      {cameraEnabled
-                        ? "Your camera is active. Our AI will monitor for multiple people in frame and ensure assessment integrity."
-                        : "This assessment uses AI-powered camera monitoring to verify that you complete it independently. We detect multiple faces and reading behaviour. Camera access is optional but recommended."}
+                      {(cameraEnabled && micEnabled)
+                        ? "Both devices are configured and active. Your live centered camera preview is shown above."
+                        : "This assessment requires access to your camera and microphone. We use AI-powered face tracking and audio translation to evaluate your answers and verify integrity. Please click below to grant permissions."}
                     </p>
-                    {!cameraEnabled && (
+                    {!(cameraEnabled && micEnabled) && (
                       <button
-                        onClick={initCamera}
+                        onClick={requestCameraAndMic}
                         className="btn btn-primary btn-sm"
-                        style={{ fontSize: "13px" }}
+                        style={{ fontSize: "13px", display: "flex", alignItems: "center", gap: "6px" }}
                       >
-                        📷 Allow Camera Access
+                        🎤 Allow Device Permissions
                       </button>
                     )}
-                    {cameraEnabled && (
-                      <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-                        <div style={{ width: "80px", height: "60px", borderRadius: "8px", overflow: "hidden", border: "1px solid rgba(16,185,129,0.3)", background: "rgba(0,0,0,0.3)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                          <span style={{ fontSize: "22px" }}>📷</span>
-                        </div>
-                        <div style={{ fontSize: "12px", color: "#10b981", fontWeight: 600 }}>🟢 Camera ready — preview in bottom-right corner</div>
+                    {(cameraEnabled && micEnabled) && (
+                      <div style={{ fontSize: "13px", color: "#10b981", fontWeight: 600, display: "flex", alignItems: "center", gap: "6px" }}>
+                        🟢 Ready to start the assessment.
                       </div>
                     )}
-
+                    {permissionsError && (
+                      <div style={{ color: "#f43f5e", fontSize: "13px", marginTop: "8px", fontWeight: 600 }}>
+                        ⚠️ {permissionsError}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -497,10 +544,16 @@ function SpeakingContent() {
                 id="start-speaking-btn"
                 onClick={startPreparation}
                 className="btn btn-primary btn-lg"
-                style={{ width: "100%" }}
+                style={{ width: "100%", opacity: (cameraEnabled && micEnabled) ? 1 : 0.6, cursor: (cameraEnabled && micEnabled) ? "pointer" : "not-allowed" }}
+                disabled={!(cameraEnabled && micEnabled)}
               >
                 Start Assessment →
               </button>
+              {!(cameraEnabled && micEnabled) && (
+                <p style={{ fontSize: "12px", color: "var(--text-muted)", textAlign: "center", marginTop: "8px" }}>
+                  Please allow camera and microphone permissions above to enable starting the assessment.
+                </p>
+              )}
             </div>
           )}
 
