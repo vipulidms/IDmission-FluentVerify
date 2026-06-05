@@ -14,9 +14,11 @@ export default function Navbar() {
     return null;
   }
 
-  const navLinks = [
+  const isAdmin = session?.user && (session.user as any).role === "admin";
+
+  const navLinks = isAdmin ? [
     { href: "/dashboard", label: "Dashboard" },
-  ];
+  ] : [];
 
   return (
     <nav className="navbar">
@@ -67,9 +69,11 @@ export default function Navbar() {
           <div className="navbar-actions">
             {session ? (
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <span style={{ fontSize: "14px", color: "var(--text-secondary)" }}>
-                  {session.user?.name || session.user?.email}
-                </span>
+                {isAdmin && (
+                  <span style={{ fontSize: "14px", color: "var(--text-secondary)" }}>
+                    {session.user?.name || session.user?.email}
+                  </span>
+                )}
                 <button
                   onClick={() => signOut({ callbackUrl: "/" })}
                   className="btn btn-ghost btn-sm"
