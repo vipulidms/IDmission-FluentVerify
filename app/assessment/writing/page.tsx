@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import ResultsPanel from "@/components/ResultsPanel";
+import Flag from "@/components/Flag";
 
 type Language = "english" | "german";
 
@@ -155,7 +156,9 @@ function WritingContent() {
         <div className="breadcrumb" style={{ paddingTop: "32px" }}>
           <Link href="/assessment">Assessment</Link>
           <span className="breadcrumb-sep">›</span>
-          <span>Writing — {language === "english" ? "🇬🇧 English" : "🇩🇪 German"}</span>
+          <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            Writing — {language === "english" ? <><Flag country="gb" size={16} /> English</> : <><Flag country="de" size={16} /> German</>}
+          </span>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "300px 1fr", gap: "32px", alignItems: "start" }}>

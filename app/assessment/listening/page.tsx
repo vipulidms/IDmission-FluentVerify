@@ -3,6 +3,7 @@ import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import ResultsPanel from "@/components/ResultsPanel";
+import Flag from "@/components/Flag";
 
 type Language = "english" | "german";
 
@@ -122,7 +123,9 @@ function ListeningContent() {
         <div className="breadcrumb" style={{ paddingTop: "32px" }}>
           <Link href="/assessment">Assessment</Link>
           <span className="breadcrumb-sep">›</span>
-          <span>Listening — {language === "english" ? "🇬🇧 English" : "🇩🇪 German"}</span>
+          <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            Listening — {language === "english" ? <><Flag country="gb" size={16} /> English</> : <><Flag country="de" size={16} /> German</>}
+          </span>
         </div>
 
         <div style={{ maxWidth: "760px", margin: "0 auto" }}>
@@ -148,8 +151,8 @@ function ListeningContent() {
                 <h3 style={{ fontSize: "18px", fontWeight: 700, marginBottom: "4px" }}>{content.title}</h3>
                 <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                   <span className={`cefr-badge cefr-${content.level}`}>{content.level}</span>
-                  <span className="text-muted" style={{ fontSize: "12px" }}>
-                    {language === "english" ? "🇬🇧 English" : "🇩🇪 German"} • Listening Comprehension
+                  <span className="text-secondary" style={{ fontSize: "14px", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                    {language === "english" ? <><Flag country="gb" size={14} /> English</> : <><Flag country="de" size={14} /> German</>} • Listening Comprehension
                   </span>
                 </div>
               </div>

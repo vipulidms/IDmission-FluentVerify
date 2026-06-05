@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import Flag from "@/components/Flag";
 
 interface QuestionSet {
   id: string;
@@ -150,7 +151,9 @@ export default function AdminQuestionsClient({ questionSets }: { questionSets: Q
             <div key={qs.id} className="glass-card" style={{ padding: "24px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "16px" }}>
                 <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-                  <span style={{ fontSize: "24px" }}>{qs.language === "english" ? "🇬🇧" : "🇩🇪"}</span>
+                  <span style={{ display: "inline-flex", alignItems: "center" }}>
+                    {qs.language === "english" ? <Flag country="gb" size={24} /> : <Flag country="de" size={24} />}
+                  </span>
                   <span className={`cefr-badge cefr-${qs.level}`}>{qs.level}</span>
                 </div>
                 <div className="text-muted" style={{ fontSize: "13px" }}>

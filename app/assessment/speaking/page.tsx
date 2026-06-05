@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import ResultsPanel from "@/components/ResultsPanel";
+import Flag from "@/components/Flag";
 
 type Language = "english" | "german";
 
@@ -69,11 +70,11 @@ function SpeakingContent() {
   }, [language]);
 
   const parts = qSet ? [
-    { title: "Part 1: Topic Introduction", prompt: qSet.sec1Topic, preparationTime: 30, speakingTime: 60, phaseLabel: "Section 1 / Topic" },
+    { title: "Part 1: Topic Introduction", prompt: qSet.sec1Topic, preparationTime: 15, speakingTime: 60, phaseLabel: "Section 1 / Topic" },
     { title: "Part 2: Follow-up Question 1", prompt: qSet.sec1FollowUp1, preparationTime: 15, speakingTime: 45, phaseLabel: "Section 1 / Q1" },
     { title: "Part 3: Follow-up Question 2", prompt: qSet.sec1FollowUp2, preparationTime: 15, speakingTime: 45, phaseLabel: "Section 1 / Q2" },
-    { title: "Part 4: New Topic", prompt: qSet.sec2Topic, preparationTime: 30, speakingTime: 60, phaseLabel: "Section 2" },
-    { title: "Part 5: Reading Paragraph", prompt: "Please read the following paragraph aloud:\n\n" + qSet.sec3Paragraph, preparationTime: 30, speakingTime: 60, phaseLabel: "Section 3" },
+    { title: "Part 4: New Topic", prompt: qSet.sec2Topic, preparationTime: 15, speakingTime: 60, phaseLabel: "Section 2" },
+    { title: "Part 5: Reading Paragraph", prompt: "Please read the following paragraph aloud:\n\n" + qSet.sec3Paragraph, preparationTime: 10, speakingTime: 60, phaseLabel: "Section 3" },
   ] : [];
 
   const startPreparation = () => {
@@ -127,13 +128,7 @@ function SpeakingContent() {
     setRecordingTime(0);
 
     timerRef.current = setInterval(() => {
-      setRecordingTime((prev) => {
-        if (prev >= parts[currentPart].speakingTime) {
-          stopRecording();
-          return prev;
-        }
-        return prev + 1;
-      });
+      setRecordingTime((prev) => prev + 1);
     }, 1000);
   };
 
@@ -143,8 +138,24 @@ function SpeakingContent() {
     }
     if (timerRef.current) clearInterval(timerRef.current);
     setIsRecording(false);
-    setPhase("transcribe");
   };
+
+  useEffect(() => {
+    if (phase === "record" && isRecording && parts[currentPart]) {
+      if (recordingTime >= parts[currentPart].speakingTime) {
+        stopRecording();
+        handleNextPart();
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recordingTime]);
+
+  useEffect(() => {
+    if (phase === "record" && !isRecording && currentTranscription === "") {
+      startRecording();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
 
   const handleNextPart = () => {
     const newTranscriptions = [...transcriptions, {
@@ -227,7 +238,9 @@ function SpeakingContent() {
         <div className="breadcrumb" style={{ paddingTop: "32px" }}>
           <Link href="/assessment">Assessment</Link>
           <span className="breadcrumb-sep">›</span>
-          <span>Speaking — {language === "english" ? "🇬🇧 English" : "🇩🇪 German"}</span>
+          <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            Speaking — {language === "english" ? <><Flag country="gb" size={16} /> English</> : <><Flag country="de" size={16} /> German</>}
+          </span>
         </div>
 
         <div style={{ maxWidth: "720px", margin: "0 auto" }}>
@@ -276,55 +289,78 @@ function SpeakingContent() {
 
           {/* Preparation Phase */}
           {phase === "prepare" && parts[currentPart] && (
-            <div className="animate-scaleIn" style={{ textAlign: "center", padding: "20px 0" }}>
-              <div style={{ fontSize: "13px", color: "var(--brand-400)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "8px" }}>
-                {parts[currentPart].title} (Part {currentPart + 1} of 5)
+            <div className="animate-scaleIn" style={{ textAlign: "center", padding: "10px 0" }}>
+              <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "12px", marginBottom: "20px" }}>
+                <div style={{ fontSize: "32px", opacity: 0.9 }}>🧠</div>
+                <div style={{ textAlign: "left" }}>
+                  <div style={{ fontSize: "12px", color: "var(--brand-400)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                    Preparation Time — Part {currentPart + 1} of 5
+                  </div>
+                  <h2 style={{ fontSize: "20px", fontWeight: 800, margin: 0 }}>{parts[currentPart].title}</h2>
+                </div>
               </div>
-              <div style={{ fontSize: "48px", marginBottom: "16px", opacity: 0.9 }}>🧠</div>
-              <h2 style={{ fontSize: "24px", fontWeight: 800, marginBottom: "8px" }}>Preparation Time</h2>
-              <p className="text-secondary" style={{ marginBottom: "20px", fontSize: "15px" }}>
-                Read the prompt carefully and organise your thoughts
+
+              <div style={{
+                padding: "20px",
+                background: "rgba(255,255,255,0.03)",
+                border: "1px solid var(--border-subtle)",
+                borderLeft: "3px solid var(--brand-primary)",
+                borderRadius: "var(--radius-md)",
+                fontSize: "16px",
+                lineHeight: "1.6",
+                textAlign: "left",
+                maxWidth: "600px",
+                margin: "0 auto 24px auto",
+                whiteSpace: "pre-wrap"
+              }}>
+                {parts[currentPart].prompt}
+              </div>
+
+              <p className="text-secondary" style={{ marginBottom: "8px", fontSize: "14px" }}>
+                Recording starts automatically in
               </p>
 
               <div style={{
-                fontSize: "64px",
+                fontSize: "56px",
                 fontWeight: 900,
                 fontFamily: "Outfit, sans-serif",
                 background: "var(--gradient-brand)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
-                marginBottom: "20px",
               }}>
                 {prepCountdown}s
-              </div>
-
-              <div style={{
-                padding: "16px 24px",
-                background: "rgba(99,102,241,0.08)",
-                border: "1px solid rgba(99,102,241,0.2)",
-                borderRadius: "var(--radius-lg)",
-                fontSize: "15px",
-                lineHeight: "1.6",
-                textAlign: "left",
-                maxWidth: "600px",
-                margin: "0 auto",
-                whiteSpace: "pre-wrap"
-              }}>
-                {parts[currentPart].prompt}
               </div>
             </div>
           )}
 
           {/* Recording Phase */}
           {phase === "record" && parts[currentPart] && (
-            <div className="animate-scaleIn" style={{ textAlign: "center", padding: "20px 0" }}>
-              <div style={{ fontSize: "13px", color: "var(--brand-400)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "8px" }}>
-                {parts[currentPart].title} (Part {currentPart + 1} of 5)
+            <div className="animate-scaleIn" style={{ textAlign: "center", padding: "10px 0" }}>
+              <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "12px", marginBottom: "20px" }}>
+                <div style={{ fontSize: "32px", opacity: 0.9 }}>🎙️</div>
+                <div style={{ textAlign: "left" }}>
+                  <div style={{ fontSize: "12px", color: "var(--brand-rose)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                    Recording — Part {currentPart + 1} of 5
+                  </div>
+                  <h2 style={{ fontSize: "20px", fontWeight: 800, margin: 0 }}>{parts[currentPart].title}</h2>
+                </div>
               </div>
-              <h2 style={{ fontSize: "24px", fontWeight: 800, marginBottom: "8px" }}>
-                {isRecording ? "🎙️ Recording..." : "Ready to Record"}
-              </h2>
-              <p className="text-secondary" style={{ marginBottom: "20px", whiteSpace: "pre-wrap", fontSize: "15px" }}>{parts[currentPart].prompt}</p>
+
+              <div style={{
+                padding: "20px",
+                background: "rgba(255,255,255,0.03)",
+                border: "1px solid var(--border-subtle)",
+                borderLeft: "3px solid var(--brand-rose)",
+                borderRadius: "var(--radius-md)",
+                fontSize: "16px",
+                lineHeight: "1.6",
+                textAlign: "left",
+                maxWidth: "600px",
+                margin: "0 auto 24px auto",
+                whiteSpace: "pre-wrap"
+              }}>
+                {parts[currentPart].prompt}
+              </div>
 
               {/* Live Transcription Preview */}
               {currentTranscription && (
@@ -376,7 +412,7 @@ function SpeakingContent() {
                 ) : (
                   <button
                     id="stop-record-btn"
-                    onClick={stopRecording}
+                    onClick={() => { stopRecording(); handleNextPart(); }}
                     className="record-btn record-btn-recording"
                     title="Stop Recording"
                     style={{ width: "64px", height: "64px", fontSize: "28px" }}
@@ -391,43 +427,7 @@ function SpeakingContent() {
             </div>
           )}
 
-          {/* Transcription Review Phase */}
-          {phase === "transcribe" && parts[currentPart] && (
-            <div className="animate-fadeInUp">
-              <h2 style={{ fontSize: "28px", fontWeight: 800, marginBottom: "8px" }}>Review Your Response</h2>
-              <p className="text-secondary" style={{ marginBottom: "28px" }}>
-                Edit the transcription for <strong>{parts[currentPart].title}</strong> if needed, then continue.
-              </p>
 
-              <div className="form-group" style={{ marginBottom: "24px" }}>
-                <label className="form-label">Transcription</label>
-                <textarea
-                  id="transcription-review"
-                  className="form-input form-textarea"
-                  value={currentTranscription}
-                  onChange={(e) => setCurrentTranscription(e.target.value)}
-                  style={{ minHeight: "200px" }}
-                />
-              </div>
-
-              {error && (
-                <div className="alert alert-error" style={{ marginBottom: "20px" }}>⚠️ {error}</div>
-              )}
-
-              <div style={{ display: "flex", gap: "12px" }}>
-                <button
-                  id="submit-speaking-btn"
-                  onClick={handleNextPart}
-                  className="btn btn-primary btn-lg"
-                  disabled={!currentTranscription.trim() || loading}
-                  style={{ flex: 1 }}
-                >
-                  {currentPart < 4 ? "Continue to Next Part →" : "Submit Full Assessment →"}
-                </button>
-                <button onClick={() => { setPhase("record"); setRecordingTime(0); }} className="btn btn-ghost">Re-record</button>
-              </div>
-            </div>
-          )}
 
           {phase === "submit" && (
             <div style={{ textAlign: "center", padding: "80px 0" }}>

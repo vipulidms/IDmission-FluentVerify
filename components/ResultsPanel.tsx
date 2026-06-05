@@ -1,5 +1,7 @@
 "use client";
 import Link from "next/link";
+import { ChevronRight, RefreshCw } from "lucide-react";
+import Flag from "@/components/Flag";
 import {
   RadarChart,
   PolarGrid,
@@ -94,7 +96,7 @@ function CircularScore({ score, color }: { score: number; color: string }) {
 export default function ResultsPanel({ result, language, skill, prompt, onRetry, isHistoryView, onClose }: Props) {
   const color = cefrColors[result.cefr_level] || "#6366f1";
   const skillLabel = skill.charAt(0).toUpperCase() + skill.slice(1);
-  const langLabel = language === "english" ? "🇬🇧 English" : "🇩🇪 German";
+  const langLabel = language === "english" ? <><Flag country="gb" size={16} /> English</> : <><Flag country="de" size={16} /> German</>;
 
   // Build radar chart data from sub_scores
   const subScoreData = Object.entries(result.sub_scores)

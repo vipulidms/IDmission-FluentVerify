@@ -2,6 +2,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import Flag from "@/components/Flag";
 
 type Language = "english" | "german";
 type Skill = "speaking" | "writing" | "listening" | "reading";
@@ -97,7 +98,7 @@ function AssessmentHubContent() {
                     boxShadow: selectedLanguage === lang ? "var(--shadow-glow)" : "none",
                   }}
                 >
-                  <span style={{ fontSize: "40px" }}>{lang === "english" ? "🇬🇧" : "🇩🇪"}</span>
+                  <span style={{ fontSize: "40px", lineHeight: 1 }}>{lang === "english" ? <Flag country="gb" size={40} /> : <Flag country="de" size={40} />}</span>
                   <div style={{ textAlign: "left" }}>
                     <div style={{ fontWeight: 700, fontSize: "18px", color: selectedLanguage === lang ? "var(--text-brand)" : "var(--text-primary)" }}>
                       {lang === "english" ? "English" : "Deutsch"}
@@ -187,9 +188,13 @@ function AssessmentHubContent() {
                 <div style={{ display: "flex", alignItems: "center", gap: "20px", flexWrap: "wrap" }}>
                   <div style={{ flex: 1 }}>
                     <h3 style={{ fontSize: "20px", fontWeight: 700, marginBottom: "8px" }}>
-                      Ready for your {selectedLanguage === "english" ? "🇬🇧 English" : "🇩🇪 German"}{" "}
-                      {skills.find((s) => s.id === selectedSkill)?.icon}{" "}
-                      {skills.find((s) => s.id === selectedSkill)?.label} Assessment?
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        Ready for your {selectedLanguage === "english" ? <><Flag country="gb" size={24} /> English</> : <><Flag country="de" size={24} /> German</>}
+                        {" "}
+                        {skills.find((s) => s.id === selectedSkill)?.icon}
+                        {" "}
+                        {skills.find((s) => s.id === selectedSkill)?.label} Assessment?
+                      </div>
                     </h3>
                     <p className="text-secondary" style={{ fontSize: "14px" }}>
                       You will receive an instant CEFR score with detailed AI feedback after completing the assessment.

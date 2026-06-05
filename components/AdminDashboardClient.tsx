@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AdminAddUserModal from "./AdminAddUserModal";
 import AdminEditUserModal from "./AdminEditUserModal";
+import Flag from "@/components/Flag";
 
 interface Assessment {
   id: string;
@@ -208,7 +209,11 @@ export default function AdminDashboardClient({ users }: Props) {
                                 >
                                   <td>{new Date(assessment.createdAt).toLocaleDateString()}</td>
                                   <td style={{ textTransform: "capitalize" }}>{skillIcons[assessment.skill]} {assessment.skill}</td>
-                                  <td style={{ textTransform: "capitalize" }}>{assessment.language === "english" ? "🇬🇧" : "🇩🇪"} {assessment.language}</td>
+                                  <td style={{ textTransform: "capitalize" }}>
+                                    <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                                      {assessment.language === "english" ? <Flag country="gb" size={16} /> : <Flag country="de" size={16} />} {assessment.language}
+                                    </span>
+                                  </td>
                                   <td><span className={`cefr-badge cefr-${assessment.cefrLevel}`}>{assessment.cefrLevel}</span></td>
                                   <td style={{ fontWeight: 700, color: "var(--text-brand)" }}>{assessment.overallScore}/100</td>
                                 </tr>

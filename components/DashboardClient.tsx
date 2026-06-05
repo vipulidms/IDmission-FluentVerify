@@ -1,6 +1,8 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import Flag from "@/components/Flag";
 import type { Session } from "next-auth";
 import {
   BarChart,
@@ -57,6 +59,7 @@ function getAverageByCEFR(assessments: Assessment[]) {
 }
 
 export default function DashboardClient({ session, assessments }: Props) {
+  const router = useRouter();
   const [selectedAssessment, setSelectedAssessment] = useState<Assessment | null>(null);
 
   if (selectedAssessment) {
@@ -128,7 +131,9 @@ export default function DashboardClient({ session, assessments }: Props) {
             <div className="stat-label">Latest CEFR Level</div>
           </div>
           <div className="stat-card">
-            <div className="stat-value">🇬🇧 {engCount} · 🇩🇪 {deCount}</div>
+            <div className="stat-value" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+              <Flag country="gb" size={24} /> {engCount} <span style={{ color: "var(--text-muted)", margin: "0 4px" }}>·</span> <Flag country="de" size={24} /> {deCount}
+            </div>
             <div className="stat-label">EN · DE Assessments</div>
           </div>
         </div>
@@ -174,19 +179,20 @@ export default function DashboardClient({ session, assessments }: Props) {
             <h3 style={{ fontSize: "16px", fontWeight: 700, marginBottom: "20px" }}>Start Assessment</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               {[
-                { lang: "english", skill: "writing", label: "🇬🇧 Writing Test" },
-                { lang: "english", skill: "speaking", label: "🇬🇧 Speaking Test" },
-                { lang: "german", skill: "writing", label: "🇩🇪 Writing Test" },
-                { lang: "german", skill: "speaking", label: "🇩🇪 Speaking Test" },
-              ].map((item) => (
-                <Link
-                  key={`${item.lang}-${item.skill}`}
-                  href={`/assessment/${item.skill}?lang=${item.lang}`}
-                  className="btn btn-ghost btn-sm"
-                  style={{ justifyContent: "flex-start" }}
+                { lang: "english", skill: "writing" },
+                { lang: "english", skill: "speaking" },
+                { lang: "german", skill: "writing" },
+                { lang: "german", skill: "speaking" },
+              ].map((item, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => router.push(`/assessment/${item.skill}?lang=${item.lang}`)}
+                  className="btn btn-outline"
+                  style={{ display: "flex", alignItems: "center", gap: "8px", justifyContent: "center" }}
                 >
-                  {item.label}
-                </Link>
+                  <Flag country={item.lang === "english" ? "gb" : "de"} size={16} />
+                  {item.lang === "english" ? "English" : "German"} {item.skill.charAt(0).toUpperCase() + item.skill.slice(1)} Test
+                </button>
               ))}
             </div>
           </div>
@@ -230,8 +236,8 @@ export default function DashboardClient({ session, assessments }: Props) {
                         </span>
                       </td>
                       <td>
-                        <span style={{ textTransform: "capitalize" }}>
-                          {assessment.language === "english" ? "🇬🇧" : "🇩🇪"} {assessment.language}
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                          {assessment.language === "english" ? <Flag country="gb" size={16} /> : <Flag country="de" size={16} />} {assessment.language}
                         </span>
                       </td>
                       <td>
