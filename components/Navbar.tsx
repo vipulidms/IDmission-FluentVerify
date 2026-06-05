@@ -10,7 +10,6 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const navLinks = [
-    { href: "/", label: "Home" },
     { href: "/assessment", label: "Start Assessment" },
     { href: "/dashboard", label: "Dashboard" },
   ];

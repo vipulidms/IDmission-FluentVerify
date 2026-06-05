@@ -117,8 +117,6 @@ export default function ResultsPanel({ result, language, skill, prompt, onRetry,
       <div className="container" style={{ paddingBottom: "80px", paddingTop: "40px" }}>
         {/* Breadcrumb */}
         <div className="breadcrumb">
-          <Link href="/">Home</Link>
-          <span className="breadcrumb-sep">›</span>
           {isHistoryView ? (
             <>
               <button onClick={onClose} style={{ cursor: "pointer", background: "none", border: "none", color: "inherit", padding: 0, font: "inherit" }}>Dashboard</button>

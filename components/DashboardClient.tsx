@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { Session } from "next-auth";
+import type { Session } from "next-auth";
 import {
   BarChart,
   Bar,

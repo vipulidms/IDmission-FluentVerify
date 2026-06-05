@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import SessionProviderWrapper from "@/components/SessionProviderWrapper";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: "IDmission FluentVerify — AI-Powered Language Assessment",
@@ -19,15 +21,17 @@ import { Inter } from "next/font/google";
 
 const inter = Inter({ subsets: ["latin"] });
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const session = await getServerSession(authOptions);
+
   return (
     <html lang="en" className="dark">
       <body className={`${inter.className} bg-gray-50 dark:bg-surface-darkest text-gray-900 dark:text-white antialiased selection:bg-brand-500/30`}>
-        <SessionProviderWrapper>
+        <SessionProviderWrapper session={session}>
           <Navbar />
           <main>{children}</main>
         </SessionProviderWrapper>

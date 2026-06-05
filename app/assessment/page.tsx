@@ -46,8 +46,6 @@ function AssessmentHubContent() {
       <div className="container">
         {/* Breadcrumb */}
         <div className="breadcrumb" style={{ paddingTop: "32px" }}>
-          <Link href="/">Home</Link>
-          <span className="breadcrumb-sep">›</span>
           <span>Assessment</span>
         </div>
 

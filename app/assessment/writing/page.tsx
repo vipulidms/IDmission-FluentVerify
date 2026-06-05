@@ -153,8 +153,6 @@ function WritingContent() {
       <div className="container" style={{ paddingBottom: "80px" }}>
         {/* Breadcrumb */}
         <div className="breadcrumb" style={{ paddingTop: "32px" }}>
-          <Link href="/">Home</Link>
-          <span className="breadcrumb-sep">›</span>
           <Link href="/assessment">Assessment</Link>
           <span className="breadcrumb-sep">›</span>
           <span>Writing — {language === "english" ? "🇬🇧 English" : "🇩🇪 German"}</span>

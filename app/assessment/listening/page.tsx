@@ -120,8 +120,6 @@ function ListeningContent() {
 
       <div className="container" style={{ paddingBottom: "80px" }}>
         <div className="breadcrumb" style={{ paddingTop: "32px" }}>
-          <Link href="/">Home</Link>
-          <span className="breadcrumb-sep">›</span>
           <Link href="/assessment">Assessment</Link>
           <span className="breadcrumb-sep">›</span>
           <span>Listening — {language === "english" ? "🇬🇧 English" : "🇩🇪 German"}</span>
