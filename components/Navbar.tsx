@@ -15,7 +15,6 @@ export default function Navbar() {
   }
 
   const navLinks = [
-    { href: "/assessment", label: "Start Assessment" },
     { href: "/dashboard", label: "Dashboard" },
   ];
 
