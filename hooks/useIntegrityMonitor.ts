@@ -69,6 +69,7 @@ export function useIntegrityMonitor(active: boolean) {
   const [toasts, setToasts] = useState<ToastWarning[]>([]);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const violationsRef = useRef<Violation[]>([]);
+  const activeToastTypesRef = useRef<Set<ViolationType>>(new Set());
 
   // Keep ref in sync so event handlers don't close over stale state
   useEffect(() => {
@@ -80,19 +81,31 @@ export function useIntegrityMonitor(active: boolean) {
     violationsRef.current = [...violationsRef.current, v];
     setViolations([...violationsRef.current]);
 
-    // Show toast
+    // Show toast if not already active
+    if (activeToastTypesRef.current.has(type)) {
+      return;
+    }
+
     const meta = VIOLATION_LABELS[type];
     const toastId = `${type}-${Date.now()}`;
     const toast: ToastWarning = { id: toastId, message: meta.message, icon: meta.icon };
+    
+    activeToastTypesRef.current.add(type);
     setToasts((prev) => [...prev, toast]);
 
     // Auto-dismiss toast after 4s
     setTimeout(() => {
+      activeToastTypesRef.current.delete(type);
       setToasts((prev) => prev.filter((t) => t.id !== toastId));
     }, 4000);
   }, []);
 
   const dismissToast = useCallback((id: string) => {
+    const lastIndex = id.lastIndexOf("-");
+    if (lastIndex !== -1) {
+      const type = id.substring(0, lastIndex) as ViolationType;
+      activeToastTypesRef.current.delete(type);
+    }
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 

@@ -160,8 +160,40 @@ export default function ResultsPanel({ result, language, skill, prompt, onRetry,
     } catch (e) {
       console.error("Failed to parse integrity report", e);
     }
-    return null;
   }, [integrityReport]);
+
+  // Group consecutive violations of the same type
+  const groupedViolations = useMemo(() => {
+    if (!reportObj || !reportObj.violations || reportObj.violations.length === 0) return [];
+    
+    const groups: {
+      type: string;
+      count: number;
+      firstTimestamp: string;
+      lastTimestamp: string;
+      details: string[];
+    }[] = [];
+
+    for (const v of reportObj.violations) {
+      const lastGroup = groups[groups.length - 1];
+      if (lastGroup && lastGroup.type === v.type) {
+        lastGroup.count += 1;
+        lastGroup.lastTimestamp = v.timestamp;
+        if (v.detail && !lastGroup.details.includes(v.detail)) {
+          lastGroup.details.push(v.detail);
+        }
+      } else {
+        groups.push({
+          type: v.type,
+          count: 1,
+          firstTimestamp: v.timestamp,
+          lastTimestamp: v.timestamp,
+          details: v.detail ? [v.detail] : [],
+        });
+      }
+    }
+    return groups;
+  }, [reportObj]);
 
   // Build radar chart data from sub_scores safely
   const subScores = safeResult.sub_scores || {};
@@ -382,8 +414,23 @@ export default function ResultsPanel({ result, language, skill, prompt, onRetry,
               The following security events were recorded during this assessment session:
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              {reportObj.violations.map((v: any, index: number) => {
-                const timeStr = v.timestamp ? new Date(v.timestamp).toLocaleTimeString() : `Event #${index + 1}`;
+              {groupedViolations.map((g: any, index: number) => {
+                const firstTime = g.firstTimestamp ? new Date(g.firstTimestamp) : null;
+                const lastTime = g.lastTimestamp ? new Date(g.lastTimestamp) : null;
+                
+                let timeStr = "";
+                if (firstTime) {
+                  const firstStr = firstTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                  if (g.count > 1 && lastTime && firstTime.getTime() !== lastTime.getTime()) {
+                    const lastStr = lastTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    timeStr = `${firstStr} - ${lastStr}`;
+                  } else {
+                    timeStr = firstStr;
+                  }
+                } else {
+                  timeStr = `Event #${index + 1}`;
+                }
+
                 const labelMap: Record<string, string> = {
                   tab_switch: "💻 Tab Switch",
                   window_blur: "📴 Left Window Focus",
@@ -398,19 +445,43 @@ export default function ResultsPanel({ result, language, skill, prompt, onRetry,
                   looking_away: "👀 Looking Away",
                   webcam_denied: "❌ Camera Denied",
                 };
+
+                let detailsText = "";
+                if (g.details && g.details.length > 0) {
+                  if (g.details.length <= 3) {
+                    detailsText = g.details.join(", ");
+                  } else {
+                    detailsText = `${g.details.slice(0, 3).join(", ")} and ${g.details.length - 3} more`;
+                  }
+                }
+
                 return (
                   <div key={index} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)" }}>
-                    <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
                       <span style={{ fontWeight: 600, fontSize: "14px", color: "var(--text-primary)" }}>
-                        {labelMap[v.type] || v.type}
+                        {labelMap[g.type] || g.type}
                       </span>
-                      {v.detail && (
-                        <span className="text-muted" style={{ fontSize: "12px", marginLeft: "12px" }}>
-                          ({v.detail})
+                      {g.count > 1 && (
+                        <span style={{ 
+                          fontSize: "11px", 
+                          fontWeight: 700, 
+                          color: "var(--brand-rose)", 
+                          background: "rgba(244, 63, 94, 0.12)", 
+                          padding: "2px 8px", 
+                          borderRadius: "9999px",
+                          border: "1px solid rgba(244, 63, 94, 0.2)",
+                          letterSpacing: "0.02em"
+                        }}>
+                          {g.count} times
+                        </span>
+                      )}
+                      {detailsText && (
+                        <span className="text-muted" style={{ fontSize: "12px", marginLeft: "4px" }}>
+                          ({detailsText})
                         </span>
                       )}
                     </div>
-                    <span className="text-muted" style={{ fontSize: "12px" }}>
+                    <span className="text-muted" style={{ fontSize: "12px", flexShrink: 0 }}>
                       {timeStr}
                     </span>
                   </div>
