@@ -23,7 +23,9 @@ interface Assessment {
   strengths: string;
   improvements: string;
   feedback: string;
+  integrityReport?: string | null; // JSON string
 }
+
 
 interface UserData {
   id: string;
@@ -63,9 +65,13 @@ export default function AdminDashboardClient({ users }: Props) {
       const attempts = user.assessments.length;
       const highestScore = user.assessments.reduce((max, a) => Math.max(max, a.overallScore), 0);
       const latestCEFR = user.assessments.length > 0 ? user.assessments[0].cefrLevel : "—";
-      return { ...user, attempts, highestScore, latestCEFR };
-    }).sort((a, b) => b.highestScore - a.highestScore); // Sort by highest score descending
+      const flaggedCount = user.assessments.filter(a => {
+        try { return a.integrityReport ? JSON.parse(a.integrityReport).flagged : false; } catch { return false; }
+      }).length;
+      return { ...user, attempts, highestScore, latestCEFR, flaggedCount };
+    }).sort((a, b) => b.highestScore - a.highestScore);
   }, [users]);
+
 
   if (selectedAssessment) {
     return (
@@ -130,8 +136,10 @@ export default function AdminDashboardClient({ users }: Props) {
                 <th style={{ padding: "20px" }}>Total Attempts</th>
                 <th style={{ padding: "20px" }}>Latest CEFR</th>
                 <th style={{ padding: "20px" }}>Highest Score</th>
+                <th style={{ padding: "20px" }}>Integrity</th>
                 <th style={{ padding: "20px", textAlign: "right" }}>Actions</th>
               </tr>
+
             </thead>
             <tbody>
               {leaderboard.map((user, index) => (
@@ -161,7 +169,21 @@ export default function AdminDashboardClient({ users }: Props) {
                     <td style={{ padding: "20px", fontWeight: 800, fontSize: "18px", color: user.highestScore >= 70 ? "#10b981" : user.highestScore >= 50 ? "#6366f1" : "#f59e0b" }}>
                       {user.attempts > 0 ? `${user.highestScore}/100` : "—"}
                     </td>
+                    <td style={{ padding: "20px" }}>
+                      {user.flaggedCount > 0 ? (
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "4px 10px", background: "rgba(244,63,94,0.12)", border: "1px solid rgba(244,63,94,0.3)", borderRadius: "9999px", fontSize: "12px", fontWeight: 700, color: "#f43f5e" }}>
+                          🚩 {user.flaggedCount} flagged
+                        </span>
+                      ) : user.attempts > 0 ? (
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "4px 10px", background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.25)", borderRadius: "9999px", fontSize: "12px", fontWeight: 700, color: "#10b981" }}>
+                          ✅ Clean
+                        </span>
+                      ) : (
+                        <span style={{ color: "var(--text-muted)", fontSize: "13px" }}>—</span>
+                      )}
+                    </td>
                     <td style={{ padding: "20px", textAlign: "right" }}>
+
                       <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end", alignItems: "center" }}>
                         <button 
                           onClick={() => setEditUser(user)}
@@ -198,14 +220,19 @@ export default function AdminDashboardClient({ users }: Props) {
                                 <th>Language</th>
                                 <th>CEFR</th>
                                 <th>Score</th>
+                                <th>Integrity</th>
                               </tr>
                             </thead>
                             <tbody>
-                              {user.assessments.map(assessment => (
+                              {user.assessments.map(assessment => {
+                                let integrityData: { riskLevel?: string; flagged?: boolean; violationCount?: number } = {};
+                                try { integrityData = assessment.integrityReport ? JSON.parse(assessment.integrityReport) : {}; } catch {}
+                                return (
                                 <tr 
                                   key={assessment.id}
                                   onClick={() => setSelectedAssessment(assessment)}
                                   className="cursor-pointer hover:bg-white/10 transition-colors"
+                                  style={{ cursor: "pointer" }}
                                 >
                                   <td>{new Date(assessment.createdAt).toLocaleDateString()}</td>
                                   <td style={{ textTransform: "capitalize" }}>{skillIcons[assessment.skill]} {assessment.skill}</td>
@@ -216,8 +243,24 @@ export default function AdminDashboardClient({ users }: Props) {
                                   </td>
                                   <td><span className={`cefr-badge cefr-${assessment.cefrLevel}`}>{assessment.cefrLevel}</span></td>
                                   <td style={{ fontWeight: 700, color: "var(--text-brand)" }}>{assessment.overallScore}/100</td>
+                                  <td>
+                                    {assessment.integrityReport ? (
+                                      integrityData.flagged ? (
+                                        <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "3px 8px", background: "rgba(244,63,94,0.12)", border: "1px solid rgba(244,63,94,0.3)", borderRadius: "9999px", fontSize: "11px", fontWeight: 700, color: "#f43f5e" }}>
+                                          🚩 {integrityData.violationCount} violations
+                                        </span>
+                                      ) : (
+                                        <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "3px 8px", background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.2)", borderRadius: "9999px", fontSize: "11px", fontWeight: 700, color: "#10b981" }}>
+                                          ✅ {integrityData.violationCount ?? 0}
+                                        </span>
+                                      )
+                                    ) : (
+                                      <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>N/A</span>
+                                    )}
+                                  </td>
                                 </tr>
-                              ))}
+                              )})}
+
                             </tbody>
                           </table>
                         </div>

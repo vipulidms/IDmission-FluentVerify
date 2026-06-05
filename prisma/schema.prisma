@@ -43,8 +43,9 @@ model Assessment {
   strengths   String   // JSON array stored as string
   improvements String  // JSON array stored as string
   feedback    String   // Detailed AI feedback
-  timeTaken   Int?     // seconds
-  createdAt   DateTime @default(now())
+  timeTaken        Int?     // seconds
+  integrityReport  String?  // JSON: { violations[], violationCount, riskLevel, flagged }
+  createdAt        DateTime @default(now())
 }
 
 model SpeakingQuestionSet {

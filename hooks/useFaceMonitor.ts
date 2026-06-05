@@ -1,0 +1,244 @@
+"use client";
+import { useEffect, useRef, useState, useCallback } from "react";
+import type { ViolationType } from "./useIntegrityMonitor";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+export type FaceStatus =
+  | "idle"          // Not started yet
+  | "requesting"    // Asking for camera permission
+  | "denied"        // Permission denied
+  | "loading"       // MediaPipe loading
+  | "ok"            // 1 face detected, looking at screen
+  | "absent"        // 0 faces detected
+  | "multiple"      // 2+ faces
+  | "looking_away"; // Face present but gaze off-screen
+
+export interface FaceMonitorState {
+  faceStatus: FaceStatus;
+  faceCount: number;
+  cameraEnabled: boolean;
+  modelLoading: boolean;
+  initCamera: () => Promise<boolean>;
+  stopCamera: () => void;
+}
+
+// Heuristic: if the face bounding box top is in the lower 60% of frame
+// the user is likely looking down at notes
+const LOOKING_DOWN_THRESHOLD = 0.6;
+
+// How long (ms) face must be absent before firing violation
+const ABSENT_DEBOUNCE_MS = 3000;
+
+// Detection interval (ms)
+const DETECTION_INTERVAL_MS = 1500;
+
+// ─── Hook ─────────────────────────────────────────────────────────────────────
+
+export function useFaceMonitor(
+  videoRef: React.RefObject<HTMLVideoElement | null>,
+  canvasRef: React.RefObject<HTMLCanvasElement | null>,
+  active: boolean,
+  onViolation: (type: ViolationType, detail?: string) => void
+): FaceMonitorState {
+  const [faceStatus, setFaceStatus] = useState<FaceStatus>("idle");
+  const [faceCount, setFaceCount] = useState(0);
+  const [cameraEnabled, setCameraEnabled] = useState(false);
+  const [modelLoading, setModelLoading] = useState(false);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const detectorRef = useRef<any>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const absentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const absentFiredRef = useRef(false);
+
+  const stopCamera = useCallback(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    if (absentTimerRef.current) clearTimeout(absentTimerRef.current);
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+    setCameraEnabled(false);
+    setFaceStatus("idle");
+    setFaceCount(0);
+  }, []);
+
+  const initCamera = useCallback(async (): Promise<boolean> => {
+    setFaceStatus("requesting");
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 320, height: 240, facingMode: "user" },
+        audio: false,
+      });
+      streamRef.current = stream;
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+
+      setCameraEnabled(true);
+      setFaceStatus("loading");
+      setModelLoading(true);
+      return true;
+    } catch {
+      setFaceStatus("denied");
+      onViolation("webcam_denied", "User denied camera permission");
+      return false;
+    }
+  }, [videoRef, onViolation]);
+
+  // Load MediaPipe FaceDetector
+  useEffect(() => {
+    if (!cameraEnabled) return;
+
+    let cancelled = false;
+
+    const loadDetector = async () => {
+      try {
+        // Dynamic import to avoid SSR issues
+        const { FaceDetector, FilesetResolver } = await import("@mediapipe/tasks-vision");
+
+        const vision = await FilesetResolver.forVisionTasks(
+          "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
+        );
+
+        if (cancelled) return;
+
+        const detector = await FaceDetector.createFromOptions(vision, {
+          baseOptions: {
+            modelAssetPath:
+              "https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite",
+            delegate: "GPU",
+          },
+          runningMode: "VIDEO",
+          minDetectionConfidence: 0.5,
+          minSuppressionThreshold: 0.3,
+        });
+
+        if (cancelled) {
+          detector.close();
+          return;
+        }
+
+        detectorRef.current = detector;
+        setModelLoading(false);
+        setFaceStatus("ok");
+      } catch (err) {
+        console.error("[FaceMonitor] Failed to load MediaPipe:", err);
+        setModelLoading(false);
+        setFaceStatus("ok"); // Degrade gracefully — don't block assessment
+      }
+    };
+
+    loadDetector();
+    return () => { cancelled = true; };
+  }, [cameraEnabled]);
+
+  // Run detection loop
+  useEffect(() => {
+    if (!active || !cameraEnabled || modelLoading || !detectorRef.current) return;
+
+    const detect = () => {
+      const video = videoRef.current;
+      const detector = detectorRef.current;
+      if (!video || !detector || video.readyState < 2) return;
+
+      try {
+        const results = detector.detectForVideo(video, performance.now());
+        const count = results.detections?.length ?? 0;
+        setFaceCount(count);
+
+        if (count === 0) {
+          setFaceStatus("absent");
+          // Start absent timer if not already running
+          if (!absentTimerRef.current) {
+            absentTimerRef.current = setTimeout(() => {
+              if (!absentFiredRef.current) {
+                absentFiredRef.current = true;
+                onViolation("face_absent", "No face detected for 3+ seconds");
+              }
+              absentTimerRef.current = null;
+            }, ABSENT_DEBOUNCE_MS);
+          }
+        } else {
+          // Face detected — clear absent timer
+          if (absentTimerRef.current) {
+            clearTimeout(absentTimerRef.current);
+            absentTimerRef.current = null;
+          }
+          absentFiredRef.current = false;
+
+          if (count > 1) {
+            setFaceStatus("multiple");
+            onViolation("multiple_faces", `${count} faces detected in frame`);
+          } else {
+            // Single face — check if looking down (reading from notes)
+            const detection = results.detections[0];
+            const bbox = detection?.boundingBox;
+            if (bbox && video.videoHeight > 0) {
+              const faceCenterYRatio = (bbox.originY + bbox.height / 2) / video.videoHeight;
+              if (faceCenterYRatio > LOOKING_DOWN_THRESHOLD) {
+                setFaceStatus("looking_away");
+                onViolation("looking_away", `Face center at ${Math.round(faceCenterYRatio * 100)}% of frame`);
+              } else {
+                setFaceStatus("ok");
+              }
+            } else {
+              setFaceStatus("ok");
+            }
+          }
+        }
+
+        // Draw debug overlay on canvas (optional, shows detection box)
+        const canvas = canvasRef.current;
+        if (canvas && results.detections?.length) {
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            results.detections.forEach((d: { boundingBox?: { originX: number; originY: number; width: number; height: number } }) => {
+              if (!d.boundingBox) return;
+              const { originX, originY, width, height } = d.boundingBox;
+              const scaleX = canvas.width / video.videoWidth;
+              const scaleY = canvas.height / video.videoHeight;
+              ctx.strokeStyle = count > 1 ? "#f43f5e" : "#10b981";
+              ctx.lineWidth = 2;
+              ctx.strokeRect(
+                originX * scaleX,
+                originY * scaleY,
+                width * scaleX,
+                height * scaleY
+              );
+            });
+          }
+        }
+      } catch {
+        // Silently skip failed frames
+      }
+    };
+
+    intervalRef.current = setInterval(detect, DETECTION_INTERVAL_MS);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [active, cameraEnabled, modelLoading, videoRef, canvasRef, onViolation]);
+
+  return { faceStatus, faceCount, cameraEnabled, modelLoading, initCamera, stopCamera };
+}
+
+// ─── Status helpers ───────────────────────────────────────────────────────────
+
+export function getFaceStatusDisplay(status: FaceStatus): { icon: string; label: string; color: string } {
+  switch (status) {
+    case "ok":           return { icon: "🟢", label: "Face OK",        color: "#10b981" };
+    case "absent":       return { icon: "🔴", label: "No Face",        color: "#f43f5e" };
+    case "multiple":     return { icon: "🟡", label: "Multiple Faces", color: "#f59e0b" };
+    case "looking_away": return { icon: "🟠", label: "Looking Away",   color: "#f97316" };
+    case "loading":      return { icon: "⚪", label: "Loading AI...",  color: "#94a3b8" };
+    case "denied":       return { icon: "❌", label: "Camera Denied",  color: "#f43f5e" };
+    case "requesting":   return { icon: "⏳", label: "Requesting...",  color: "#94a3b8" };
+    default:             return { icon: "⚪", label: "Idle",           color: "#475569" };
+  }
+}

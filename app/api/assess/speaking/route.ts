@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    const { responses, language, setId } = await req.json();
+    const { responses, language, setId, integrityReport } = await req.json();
 
     if (!responses || !Array.isArray(responses) || !language) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -27,8 +27,8 @@ export async function POST(req: NextRequest) {
     const result = await assessSpeaking(responses, language, targetCefrLevel);
 
     // concatenate user responses for storage
-    const fullTranscription = responses.map(r => r.transcription).join(" | ").substring(0, 2000);
-    const fullPrompt = responses.map(r => r.prompt).join(" | ").substring(0, 200);
+    const fullTranscription = responses.map((r: { transcription: string }) => r.transcription).join(" | ").substring(0, 2000);
+    const fullPrompt = responses.map((r: { prompt: string }) => r.prompt).join(" | ").substring(0, 200);
 
     if (userId) {
       await prisma.assessment.create({
@@ -46,13 +46,20 @@ export async function POST(req: NextRequest) {
             strengths: JSON.stringify(result.strengths),
             improvements: JSON.stringify(result.improvements),
             feedback: result.detailed_feedback,
+            integrityReport: integrityReport ? JSON.stringify(integrityReport) : null,
           },
         });
       }
 
-    return NextResponse.json(result);
+    // Include riskLevel in response so ResultsPanel can show the badge
+    return NextResponse.json({
+      ...result,
+      integrityRiskLevel: integrityReport?.riskLevel ?? "low",
+      integrityFlagged: integrityReport?.flagged ?? false,
+    });
   } catch (error) {
     console.error("Speaking assessment error:", error);
     return NextResponse.json({ error: "Assessment failed. Please try again." }, { status: 500 });
   }
 }
+

@@ -1,4 +1,5 @@
 "use client";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ChevronRight, RefreshCw } from "lucide-react";
 import Flag from "@/components/Flag";
@@ -38,6 +39,7 @@ interface Props {
   onRetry: () => void;
   isHistoryView?: boolean;
   onClose?: () => void;
+  integrityRiskLevel?: "low" | "medium" | "high";
 }
 
 const cefrColors: Record<string, string> = {
@@ -93,17 +95,61 @@ function CircularScore({ score, color }: { score: number; color: string }) {
   );
 }
 
-export default function ResultsPanel({ result, language, skill, prompt, onRetry, isHistoryView, onClose }: Props) {
-  const color = cefrColors[result.cefr_level] || "#6366f1";
-  const skillLabel = skill.charAt(0).toUpperCase() + skill.slice(1);
-  const langLabel = language === "english" ? <><Flag country="gb" size={16} /> English</> : <><Flag country="de" size={16} /> German</>;
+export default function ResultsPanel({ result, language, skill, prompt, onRetry, isHistoryView, onClose, integrityRiskLevel }: Props) {
+  const [mounted, setMounted] = useState(false);
 
-  // Build radar chart data from sub_scores
-  const subScoreData = Object.entries(result.sub_scores)
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Safe checks & default values to prevent blank page crashes
+  const safeResult = result || {};
+  const cefrLevel = safeResult.cefr_level || "B1";
+  const overallScore = typeof safeResult.overall_score === "number" ? safeResult.overall_score : 60;
+  const detailedFeedback = safeResult.detailed_feedback || "Assessment complete. Keep practicing to improve your skills!";
+  const integrityRisk = integrityRiskLevel || "low";
+
+  const color = cefrColors[cefrLevel] || "#6366f1";
+  const skillLabel = skill ? skill.charAt(0).toUpperCase() + skill.slice(1) : "Assessment";
+  const langLabel = language === "english" ? <><Flag country="gb" size={16} /> English</> : <><Flag country="de" size={16} /> German</>;
+  const isVerified = integrityRisk === "low" && !isHistoryView;
+
+  // Safe parsing helper for strengths / improvements lists
+  const parseList = (val: any): string[] => {
+    if (!val) return [];
+    if (Array.isArray(val)) {
+      return val.map(item => String(item));
+    }
+    if (typeof val === "string") {
+      const trimmed = val.trim();
+      if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+        try {
+          const parsed = JSON.parse(trimmed);
+          if (Array.isArray(parsed)) {
+            return parsed.map(item => String(item));
+          }
+        } catch (e) {
+          // ignore parsing error and treat as plain string
+        }
+      }
+      if (trimmed.includes("\n")) {
+        return trimmed.split("\n").map(s => s.replace(/^[•\-\*\d\.\s]+/, "").trim()).filter(Boolean);
+      }
+      return [trimmed];
+    }
+    return [];
+  };
+
+  const strengths = parseList(safeResult.strengths);
+  const improvements = parseList(safeResult.improvements);
+
+  // Build radar chart data from sub_scores safely
+  const subScores = safeResult.sub_scores || {};
+  const subScoreData = Object.entries(subScores)
     .filter(([, v]) => v != null)
     .map(([key, value]) => ({
       subject: key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, " "),
-      score: value as number,
+      score: typeof value === "number" ? value : 0,
       fullMark: 100,
     }));
 
@@ -139,11 +185,17 @@ export default function ResultsPanel({ result, language, skill, prompt, onRetry,
           <div className="hero-badge" style={{ display: "inline-flex", borderColor: `${color}60`, background: `${color}15`, color }}>
             {isHistoryView ? "📖 Assessment Details" : "✨ Assessment Complete"}
           </div>
+          {isVerified && (
+            <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", marginLeft: "10px", padding: "5px 14px", background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.3)", borderRadius: "9999px", fontSize: "12px", fontWeight: 700, color: "#10b981", letterSpacing: "0.05em", verticalAlign: "middle" }}>
+              ✅ Verified
+            </div>
+          )}
           <h1 style={{ fontSize: "clamp(32px, 5vw, 52px)", fontWeight: 900, marginTop: "16px", marginBottom: "8px" }}>
             {isHistoryView ? "Your " : "Your "}<span className="gradient-text">{isHistoryView ? "History" : "Results"}</span>
           </h1>
           <p className="text-secondary">{langLabel} · {skillLabel} Assessment</p>
         </div>
+
 
         {/* Top Stats Row */}
         <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "32px", marginBottom: "36px", alignItems: "center" }}>
@@ -159,23 +211,23 @@ export default function ResultsPanel({ result, language, skill, prompt, onRetry,
               color, lineHeight: 1, marginBottom: "8px",
               textShadow: `0 0 40px ${color}60`,
             }}>
-              {result.cefr_level}
+              {cefrLevel}
             </div>
             <div style={{ fontWeight: 700, fontSize: "18px", marginBottom: "4px" }}>
-              {cefrLabels[result.cefr_level]}
+              {cefrLabels[cefrLevel] || "Intermediate"}
             </div>
             <div className="text-secondary" style={{ fontSize: "13px" }}>CEFR Level</div>
           </div>
 
           {/* Score ring + description */}
           <div className="glass-card" style={{ padding: "36px", display: "flex", alignItems: "center", gap: "36px" }}>
-            <CircularScore score={result.overall_score} color={color} />
+            <CircularScore score={overallScore} color={color} />
             <div>
               <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--text-muted)", marginBottom: "12px", textTransform: "uppercase", letterSpacing: "0.08em" }}>
                 Overall Score
               </div>
               <p style={{ fontSize: "16px", lineHeight: "1.7", color: "var(--text-secondary)", maxWidth: "420px" }}>
-                {cefrDescriptions[result.cefr_level]}
+                {cefrDescriptions[cefrLevel] || "Evaluation complete."}
               </p>
             </div>
           </div>
@@ -187,31 +239,37 @@ export default function ResultsPanel({ result, language, skill, prompt, onRetry,
           {subScoreData.length > 0 && (
             <div className="glass-card" style={{ padding: "28px" }}>
               <h3 style={{ fontSize: "18px", fontWeight: 700, marginBottom: "24px" }}>Skill Breakdown</h3>
-              <ResponsiveContainer width="100%" height={240}>
-                <RadarChart data={subScoreData}>
-                  <PolarGrid stroke="rgba(255,255,255,0.08)" />
-                  <PolarAngleAxis
-                    dataKey="subject"
-                    tick={{ fill: "var(--text-secondary)", fontSize: 12, fontFamily: "Inter" }}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      background: "var(--bg-card)",
-                      border: "1px solid var(--border-glass)",
-                      borderRadius: "8px",
-                      color: "var(--text-primary)",
-                    }}
-                  />
-                  <Radar
-                    name="Score"
-                    dataKey="score"
-                    stroke={color}
-                    fill={color}
-                    fillOpacity={0.2}
-                    strokeWidth={2}
-                  />
-                </RadarChart>
-              </ResponsiveContainer>
+              {mounted ? (
+                <ResponsiveContainer width="100%" height={240}>
+                  <RadarChart data={subScoreData}>
+                    <PolarGrid stroke="rgba(255,255,255,0.08)" />
+                    <PolarAngleAxis
+                      dataKey="subject"
+                      tick={{ fill: "var(--text-secondary)", fontSize: 12, fontFamily: "Inter" }}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        background: "var(--bg-card)",
+                        border: "1px solid var(--border-glass)",
+                        borderRadius: "8px",
+                        color: "var(--text-primary)",
+                      }}
+                    />
+                    <Radar
+                      name="Score"
+                      dataKey="score"
+                      stroke={color}
+                      fill={color}
+                      fillOpacity={0.2}
+                      strokeWidth={2}
+                    />
+                  </RadarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div style={{ height: "240px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <div className="spinner" />
+                </div>
+              )}
 
               {/* Sub-score bars */}
               <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "16px" }}>
@@ -236,42 +294,50 @@ export default function ResultsPanel({ result, language, skill, prompt, onRetry,
               <h3 style={{ fontSize: "16px", fontWeight: 700, marginBottom: "16px", color: "#10b981", display: "flex", alignItems: "center", gap: "8px" }}>
                 ✅ Strengths
               </h3>
-              <ul style={{ display: "flex", flexDirection: "column", gap: "10px", listStyle: "none" }}>
-                {(typeof result.strengths === "string" ? JSON.parse(result.strengths) : result.strengths).map((s: string, i: number) => (
-                  <li key={i} style={{
-                    fontSize: "14px",
-                    color: "var(--text-secondary)",
-                    padding: "10px 14px",
-                    background: "rgba(16,185,129,0.06)",
-                    borderRadius: "var(--radius-sm)",
-                    border: "1px solid rgba(16,185,129,0.15)",
-                    lineHeight: "1.5",
-                  }}>
-                    {s}
-                  </li>
-                ))}
-              </ul>
+              {strengths.length > 0 ? (
+                <ul style={{ display: "flex", flexDirection: "column", gap: "10px", listStyle: "none" }}>
+                  {strengths.map((s: string, i: number) => (
+                    <li key={i} style={{
+                      fontSize: "14px",
+                      color: "var(--text-secondary)",
+                      padding: "10px 14px",
+                      background: "rgba(16,185,129,0.06)",
+                      borderRadius: "var(--radius-sm)",
+                      border: "1px solid rgba(16,185,129,0.15)",
+                      lineHeight: "1.5",
+                    }}>
+                      {s}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-secondary" style={{ fontSize: "14px", fontStyle: "italic" }}>No specific strengths noted.</p>
+              )}
             </div>
 
             <div className="glass-card" style={{ padding: "24px", flex: 1 }}>
               <h3 style={{ fontSize: "16px", fontWeight: 700, marginBottom: "16px", color: "#f59e0b", display: "flex", alignItems: "center", gap: "8px" }}>
                 💡 Areas to Improve
               </h3>
-              <ul style={{ display: "flex", flexDirection: "column", gap: "10px", listStyle: "none" }}>
-                {(typeof result.improvements === "string" ? JSON.parse(result.improvements) : result.improvements).map((s: string, i: number) => (
-                  <li key={i} style={{
-                    fontSize: "14px",
-                    color: "var(--text-secondary)",
-                    padding: "10px 14px",
-                    background: "rgba(245,158,11,0.06)",
-                    borderRadius: "var(--radius-sm)",
-                    border: "1px solid rgba(245,158,11,0.15)",
-                    lineHeight: "1.5",
-                  }}>
-                    {s}
-                  </li>
-                ))}
-              </ul>
+              {improvements.length > 0 ? (
+                <ul style={{ display: "flex", flexDirection: "column", gap: "10px", listStyle: "none" }}>
+                  {improvements.map((s: string, i: number) => (
+                    <li key={i} style={{
+                      fontSize: "14px",
+                      color: "var(--text-secondary)",
+                      padding: "10px 14px",
+                      background: "rgba(245,158,11,0.06)",
+                      borderRadius: "var(--radius-sm)",
+                      border: "1px solid rgba(245,158,11,0.15)",
+                      lineHeight: "1.5",
+                    }}>
+                      {s}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-secondary" style={{ fontSize: "14px", fontStyle: "italic" }}>No specific improvements needed.</p>
+              )}
             </div>
           </div>
         </div>
@@ -282,17 +348,19 @@ export default function ResultsPanel({ result, language, skill, prompt, onRetry,
             🤖 AI Detailed Feedback
           </h3>
           <p style={{ fontSize: "15px", lineHeight: "1.85", color: "var(--text-secondary)" }}>
-            {result.detailed_feedback}
+            {detailedFeedback}
           </p>
         </div>
 
         {/* Prompt reference */}
-        <div style={{ padding: "16px 20px", background: "rgba(255,255,255,0.02)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-md)", marginBottom: "32px" }}>
-          <div style={{ fontSize: "11px", color: "var(--text-muted)", marginBottom: "4px", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-            Assessment Prompt
+        {prompt && (
+          <div style={{ padding: "16px 20px", background: "rgba(255,255,255,0.02)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-md)", marginBottom: "32px" }}>
+            <div style={{ fontSize: "11px", color: "var(--text-muted)", marginBottom: "4px", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+              Assessment Prompt
+            </div>
+            <p style={{ fontSize: "14px", color: "var(--text-secondary)" }}>{prompt}</p>
           </div>
-          <p style={{ fontSize: "14px", color: "var(--text-secondary)" }}>{prompt}</p>
-        </div>
+        )}
 
         {/* Action Buttons */}
         <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
