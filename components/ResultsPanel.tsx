@@ -13,15 +13,15 @@ interface AssessmentResult {
   cefr_level: string;
   overall_score: number;
   sub_scores: {
-    grammar?: number;
-    vocabulary?: number;
-    fluency?: number;
-    coherence?: number;
-    comprehension?: number;
-    pronunciation?: number;
-    task_achievement?: number;
-    inference?: number;
-    detail_recognition?: number;
+    grammar?: number | null;
+    vocabulary?: number | null;
+    fluency?: number | null;
+    coherence?: number | null;
+    comprehension?: number | null;
+    pronunciation?: number | null;
+    task_achievement?: number | null;
+    inference?: number | null;
+    detail_recognition?: number | null;
   };
   strengths: string[];
   improvements: string[];
@@ -98,7 +98,7 @@ export default function ResultsPanel({ result, language, skill, prompt, onRetry,
 
   // Build radar chart data from sub_scores
   const subScoreData = Object.entries(result.sub_scores)
-    .filter(([, v]) => v !== undefined)
+    .filter(([, v]) => v != null)
     .map(([key, value]) => ({
       subject: key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, " "),
       score: value as number,

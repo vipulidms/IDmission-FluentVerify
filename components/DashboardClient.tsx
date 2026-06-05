@@ -19,10 +19,10 @@ interface Assessment {
   skill: string;
   cefrLevel: string;
   overallScore: number;
-  grammarScore?: number;
-  vocabularyScore?: number;
-  fluencyScore?: number;
-  coherenceScore?: number;
+  grammarScore: number | null;
+  vocabularyScore: number | null;
+  fluencyScore: number | null;
+  coherenceScore: number | null;
   createdAt: Date;
   prompt: string;
   userResponse: string;
