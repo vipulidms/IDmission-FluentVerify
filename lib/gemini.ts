@@ -57,7 +57,8 @@ export async function assessWriting(
   }
   
   CEFR levels: A1 (0-20), A2 (21-35), B1 (36-55), B2 (56-75), C1 (76-90), C2 (91-100)
-  Score should reflect genuine CEFR assessment. Be specific and constructive.`;
+  Score should reflect genuine CEFR assessment. Be specific and constructive.
+  CRITICAL: The JSON above is purely an example of the structure. DO NOT copy the scores (e.g., 65) or text from the example. You MUST evaluate the response strictly on its own merits and provide genuine scores and feedback.`;
 
   const result = await model.generateContent(systemPrompt);
   const text = cleanJsonResponse(result.response.text());
@@ -110,7 +111,8 @@ export async function assessReading(
     "strengths": ["strength 1", "strength 2"],
     "improvements": ["improvement 1", "improvement 2"],
     "detailed_feedback": "Detailed feedback paragraph..."
-  }`;
+  }
+  CRITICAL: The JSON above is purely an example of the structure. DO NOT copy the scores (e.g., 72) or text from the example. You MUST evaluate the response strictly on its own merits and provide genuine scores and feedback.`;
 
   const result = await model.generateContent(systemPrompt);
   const text = cleanJsonResponse(result.response.text());
@@ -159,7 +161,8 @@ export async function assessListening(
     "strengths": ["strength 1", "strength 2"],
     "improvements": ["improvement 1", "improvement 2"],
     "detailed_feedback": "Detailed feedback paragraph..."
-  }`;
+  }
+  CRITICAL: The JSON above is purely an example of the structure. DO NOT copy the scores (e.g., 65) or text from the example. You MUST evaluate the response strictly on its own merits and provide genuine scores and feedback.`;
 
   const result = await model.generateContent(systemPrompt);
   const text = cleanJsonResponse(result.response.text());
@@ -210,7 +213,8 @@ export async function assessSpeaking(
     "detailed_feedback": "Detailed speaking feedback paragraph addressing the whole assessment..."
   }
   
-  Note: Evaluate holistically based on grammar in transcription, vocabulary range, and likely fluency across all 5 parts. Be constructive and specific.`;
+  Note: Evaluate holistically based on grammar in transcription, vocabulary range, and likely fluency across all 5 parts. Be constructive and specific.
+  CRITICAL: The JSON above is purely an example of the structure. DO NOT copy the scores (e.g., 72) or text from the example. You MUST evaluate the response strictly on its own merits and provide genuine scores and feedback.`;
 
   const result = await model.generateContent(systemPrompt);
   const text = cleanJsonResponse(result.response.text());
