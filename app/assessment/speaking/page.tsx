@@ -155,6 +155,7 @@ function SpeakingContent() {
     
     setTranscriptions(newTranscriptions);
     setCurrentTranscription("");
+    setRecordingTime(0);
     
     if (currentPart < parts.length - 1) {
       setCurrentPart(c => c + 1);
@@ -423,7 +424,7 @@ function SpeakingContent() {
                 >
                   {currentPart < 4 ? "Continue to Next Part →" : "Submit Full Assessment →"}
                 </button>
-                <button onClick={() => setPhase("record")} className="btn btn-ghost">Re-record</button>
+                <button onClick={() => { setPhase("record"); setRecordingTime(0); }} className="btn btn-ghost">Re-record</button>
               </div>
             </div>
           )}
