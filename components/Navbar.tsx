@@ -9,6 +9,11 @@ export default function Navbar() {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
 
+  // Hide navbar on auth pages
+  if (pathname?.startsWith("/auth/")) {
+    return null;
+  }
+
   const navLinks = [
     { href: "/assessment", label: "Start Assessment" },
     { href: "/dashboard", label: "Dashboard" },
