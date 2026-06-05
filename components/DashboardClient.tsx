@@ -405,11 +405,8 @@ export default function DashboardClient({ session, assessments }: Props) {
         {/* ─── Header ─── */}
         <div style={{ paddingTop: "40px", marginBottom: "36px", display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: "16px" }}>
           <div>
-            <div className="hero-badge" style={{ display: "inline-flex", marginBottom: "12px" }}>
-              📊 Your Dashboard
-            </div>
             <h1 style={{ fontSize: "clamp(26px, 4vw, 42px)", fontWeight: 900, marginBottom: "6px" }}>
-              Welcome back, <span className="gradient-text">{firstName}</span>!
+              Welcome back!
             </h1>
             <p className="text-secondary" style={{ fontSize: "15px" }}>
               Track your language learning journey and performance insights.
