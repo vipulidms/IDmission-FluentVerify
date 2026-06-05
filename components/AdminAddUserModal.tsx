@@ -13,6 +13,7 @@ export default function AdminAddUserModal({ onClose, onSuccess }: Props) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("user");
+  const [targetCefrLevel, setTargetCefrLevel] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -25,7 +26,7 @@ export default function AdminAddUserModal({ onClose, onSuccess }: Props) {
       const res = await fetch("/api/admin/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ firstName, lastName, mobileNumber, email, password, role }),
+        body: JSON.stringify({ firstName, lastName, mobileNumber, email, password, role, targetCefrLevel: targetCefrLevel || null }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to add user");
@@ -78,6 +79,19 @@ export default function AdminAddUserModal({ onClose, onSuccess }: Props) {
             <select className="form-input" value={role} onChange={e => setRole(e.target.value)}>
               <option value="user">Candidate (User)</option>
               <option value="admin">Super Admin</option>
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Target CEFR Level</label>
+            <select className="form-input" value={targetCefrLevel} onChange={e => setTargetCefrLevel(e.target.value)}>
+              <option value="">None (Assess all levels)</option>
+              <option value="A1">A1 - Beginner</option>
+              <option value="A2">A2 - Elementary</option>
+              <option value="B1">B1 - Intermediate</option>
+              <option value="B2">B2 - Upper-Intermediate</option>
+              <option value="C1">C1 - Advanced</option>
+              <option value="C2">C2 - Mastery</option>
             </select>
           </div>
 

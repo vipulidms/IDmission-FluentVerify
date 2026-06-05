@@ -18,13 +18,12 @@ export default function Navbar() {
     <nav className="navbar">
       <div className="container">
         <div className="navbar-inner">
-          {/* Logo */}
-          <Link href="/" className="navbar-logo">
+          <div className="navbar-logo">
             <div className="navbar-logo-icon">🌍</div>
             <span>
               <span className="gradient-text">IDmission</span> FluentVerify
             </span>
-          </Link>
+          </div>
 
           {/* Nav Links */}
           <ul className="navbar-nav">

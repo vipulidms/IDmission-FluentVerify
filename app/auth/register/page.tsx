@@ -12,6 +12,7 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [targetCefrLevel, setTargetCefrLevel] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -34,7 +35,7 @@ export default function RegisterPage() {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ firstName, lastName, mobileNumber, email, password }),
+        body: JSON.stringify({ firstName, lastName, mobileNumber, email, password, targetCefrLevel: targetCefrLevel || null }),
       });
 
       const data = await res.json();
@@ -87,10 +88,10 @@ export default function RegisterPage() {
       }}>
         {/* Logo */}
         <div style={{ textAlign: "center", marginBottom: "36px" }}>
-          <Link href="/" style={{ display: "inline-flex", alignItems: "center", gap: "10px", fontFamily: "Outfit, sans-serif", fontWeight: 800, fontSize: "22px" }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: "10px", fontFamily: "Outfit, sans-serif", fontWeight: 800, fontSize: "22px" }}>
             <div className="navbar-logo-icon">🌍</div>
             <span><span className="gradient-text">IDmission</span> FluentVerify</span>
-          </Link>
+          </div>
           <h1 style={{ fontSize: "28px", fontWeight: 800, marginTop: "24px", marginBottom: "8px" }}>Create your account</h1>
           <p className="text-secondary" style={{ fontSize: "15px" }}>Start your language assessment journey</p>
         </div>
@@ -185,6 +186,20 @@ export default function RegisterPage() {
               required
               autoComplete="new-password"
             />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Target CEFR Level (Optional)</label>
+            <select className="form-input" value={targetCefrLevel} onChange={e => setTargetCefrLevel(e.target.value)}>
+              <option value="">None (Assess all levels)</option>
+              <option value="A1">A1 - Beginner</option>
+              <option value="A2">A2 - Elementary</option>
+              <option value="B1">B1 - Intermediate</option>
+              <option value="B2">B2 - Upper-Intermediate</option>
+              <option value="C1">C1 - Advanced</option>
+              <option value="C2">C2 - Mastery</option>
+            </select>
+            <p style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "4px" }}>Select this if you are practicing for a specific level.</p>
           </div>
 
           <button

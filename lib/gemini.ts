@@ -29,11 +29,14 @@ function cleanJsonResponse(text: string): string {
 export async function assessWriting(
   userText: string,
   prompt: string,
-  language: "english" | "german"
+  language: "english" | "german",
+  targetCefrLevel?: string | null
 ): Promise<AssessmentResult> {
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-  const systemPrompt = `You are an expert ${language} language assessor certified in CEFR (Common European Framework of Reference for Languages). 
+  const targetInstruction = targetCefrLevel ? `\nCRITICAL: The user's target CEFR level is ${targetCefrLevel}. You MUST evaluate their response strictly against the requirements of ${targetCefrLevel}. Your feedback should explicitly state if they meet this target level or fall short, but you must still provide an accurate overall CEFR level assessment based on their actual performance.` : "";
+
+  const systemPrompt = `You are an expert ${language} language assessor certified in CEFR (Common European Framework of Reference for Languages). ${targetInstruction}
   
   Assess the following ${language} writing response to the given prompt. Return ONLY a JSON object with no markdown formatting.
 
@@ -84,15 +87,18 @@ export async function assessWriting(
 export async function assessReading(
   questions: Array<{ question: string; userAnswer: string; correctAnswer?: string }>,
   passage: string,
-  language: "english" | "german"
+  language: "english" | "german",
+  targetCefrLevel?: string | null
 ): Promise<AssessmentResult> {
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+  const targetInstruction = targetCefrLevel ? `\nCRITICAL: The user's target CEFR level is ${targetCefrLevel}. You MUST evaluate their reading comprehension strictly against the requirements of ${targetCefrLevel}. Your feedback should explicitly state if they meet this target level or fall short, but still provide an accurate overall CEFR level score.` : "";
 
   const qAndA = questions
     .map((q, i) => `Q${i + 1}: ${q.question}\nUser Answer: ${q.userAnswer}${q.correctAnswer ? `\nExpected: ${q.correctAnswer}` : ""}`)
     .join("\n\n");
 
-  const systemPrompt = `You are an expert ${language} language assessor. Evaluate the user's reading comprehension based on their answers to questions about a passage.
+  const systemPrompt = `You are an expert ${language} language assessor. Evaluate the user's reading comprehension based on their answers to questions about a passage. ${targetInstruction}
 
   Reading Passage: "${passage.substring(0, 1000)}..."
   
@@ -134,15 +140,18 @@ export async function assessReading(
 export async function assessListening(
   questions: Array<{ question: string; userAnswer: string; correctAnswer?: string }>,
   audioTranscript: string,
-  language: "english" | "german"
+  language: "english" | "german",
+  targetCefrLevel?: string | null
 ): Promise<AssessmentResult> {
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+  const targetInstruction = targetCefrLevel ? `\nCRITICAL: The user's target CEFR level is ${targetCefrLevel}. You MUST evaluate their listening comprehension strictly against the requirements of ${targetCefrLevel}. Your feedback should explicitly state if they meet this target level or fall short, but still provide an accurate overall CEFR level score.` : "";
 
   const qAndA = questions
     .map((q, i) => `Q${i + 1}: ${q.question}\nUser Answer: ${q.userAnswer}${q.correctAnswer ? `\nExpected: ${q.correctAnswer}` : ""}`)
     .join("\n\n");
 
-  const systemPrompt = `You are an expert ${language} language assessor. Evaluate listening comprehension based on answers to questions about an audio recording.
+  const systemPrompt = `You are an expert ${language} language assessor. Evaluate listening comprehension based on answers to questions about an audio recording. ${targetInstruction}
 
   Audio Content (transcript): "${audioTranscript}"
   
@@ -183,15 +192,18 @@ export async function assessListening(
 
 export async function assessSpeaking(
   responses: Array<{ phase: string; prompt: string; transcription: string }>,
-  language: "english" | "german"
+  language: "english" | "german",
+  targetCefrLevel?: string | null
 ): Promise<AssessmentResult> {
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+  const targetInstruction = targetCefrLevel ? `\nCRITICAL: The user's target CEFR level is ${targetCefrLevel}. You MUST evaluate their spoken responses strictly against the requirements of ${targetCefrLevel}. Your feedback should explicitly state if they meet this target level or fall short, but still provide an accurate overall CEFR level assessment based on their actual performance.` : "";
 
   const qAndA = responses
     .map((r) => `[${r.phase}] Prompt: "${r.prompt}"\nUser Response: "${r.transcription}"`)
     .join("\n\n");
 
-  const systemPrompt = `You are an expert ${language} language speaking assessor certified in CEFR standards.
+  const systemPrompt = `You are an expert ${language} language speaking assessor certified in CEFR standards. ${targetInstruction}
   
   Assess the following combined transcriptions of a 5-part spoken assessment.
   

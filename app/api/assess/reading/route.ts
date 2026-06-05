@@ -13,12 +13,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    const result = await assessReading(questions, passage, language);
+    let targetCefrLevel: string | null = null;
+    let userId: string | null = null;
 
     if (session?.user) {
-      const userId = (session.user as { id?: string }).id;
+      userId = (session.user as { id?: string }).id || null;
       if (userId) {
-        await prisma.assessment.create({
+        const userRec = await prisma.user.findUnique({ where: { id: userId } });
+        targetCefrLevel = userRec?.targetCefrLevel || null;
+      }
+    }
+
+    const result = await assessReading(questions, passage, language, targetCefrLevel);
+
+    if (userId) {
+      await prisma.assessment.create({
           data: {
             userId,
             language,
@@ -34,7 +43,6 @@ export async function POST(req: NextRequest) {
           },
         });
       }
-    }
 
     return NextResponse.json(result);
   } catch (error) {
