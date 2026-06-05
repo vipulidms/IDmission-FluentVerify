@@ -4,7 +4,7 @@ import ResultsPanel from "./ResultsPanel";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AdminAddUserModal from "./AdminAddUserModal";
-import AdminResetPasswordModal from "./AdminResetPasswordModal";
+import AdminEditUserModal from "./AdminEditUserModal";
 
 interface Assessment {
   id: string;
@@ -33,6 +33,7 @@ interface UserData {
   email: string;
   image: string | null;
   role: string;
+  targetCefrLevel?: string | null;
   assessments: Assessment[];
 }
 
@@ -53,7 +54,7 @@ export default function AdminDashboardClient({ users }: Props) {
   const [selectedAssessment, setSelectedAssessment] = useState<Assessment | null>(null);
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
-  const [resetPasswordUser, setResetPasswordUser] = useState<{ id: string, name: string } | null>(null);
+  const [editUser, setEditUser] = useState<UserData | null>(null);
 
   // Compute leaderboard stats
   const leaderboard = useMemo(() => {
@@ -161,11 +162,11 @@ export default function AdminDashboardClient({ users }: Props) {
                     <td style={{ padding: "20px", textAlign: "right" }}>
                       <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end", alignItems: "center" }}>
                         <button 
-                          onClick={() => setResetPasswordUser({ id: user.id, name: user.firstName ? `${user.firstName} ${user.lastName || ""}`.trim() : user.name || user.email })}
+                          onClick={() => setEditUser(user)}
                           className="btn btn-ghost btn-sm"
                           style={{ color: "var(--brand-400)" }}
                         >
-                          Reset Password
+                          Edit Candidate
                         </button>
                         {user.attempts > 0 && (
                           <button 
@@ -237,12 +238,17 @@ export default function AdminDashboardClient({ users }: Props) {
           onSuccess={() => { setIsAddUserOpen(false); router.refresh(); }} 
         />
       )}
-      {resetPasswordUser && (
-        <AdminResetPasswordModal 
-          userId={resetPasswordUser.id}
-          userName={resetPasswordUser.name}
-          onClose={() => setResetPasswordUser(null)} 
-          onSuccess={() => { setResetPasswordUser(null); router.refresh(); }} 
+      {editUser && (
+        <AdminEditUserModal 
+          user={{
+            id: editUser.id,
+            name: editUser.firstName ? `${editUser.firstName} ${editUser.lastName || ""}`.trim() : editUser.name || editUser.email,
+            email: editUser.email,
+            mobileNumber: editUser.mobileNumber,
+            targetCefrLevel: editUser.targetCefrLevel,
+          }}
+          onClose={() => setEditUser(null)} 
+          onSuccess={() => { setEditUser(null); router.refresh(); }} 
         />
       )}
     </div>
