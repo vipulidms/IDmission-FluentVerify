@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { ChevronRight, RefreshCw } from "lucide-react";
 import Flag from "@/components/Flag";
@@ -40,6 +40,7 @@ interface Props {
   isHistoryView?: boolean;
   onClose?: () => void;
   integrityRiskLevel?: "low" | "medium" | "high";
+  integrityReport?: string | null;
 }
 
 const cefrColors: Record<string, string> = {
@@ -95,7 +96,7 @@ function CircularScore({ score, color }: { score: number; color: string }) {
   );
 }
 
-export default function ResultsPanel({ result, language, skill, prompt, onRetry, isHistoryView, onClose, integrityRiskLevel }: Props) {
+export default function ResultsPanel({ result, language, skill, prompt, onRetry, isHistoryView, onClose, integrityRiskLevel, integrityReport }: Props) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -142,6 +143,25 @@ export default function ResultsPanel({ result, language, skill, prompt, onRetry,
 
   const strengths = parseList(safeResult.strengths);
   const improvements = parseList(safeResult.improvements);
+
+  // Parse integrity report safely
+  const reportObj = useMemo(() => {
+    if (!integrityReport) return null;
+    try {
+      const parsed = typeof integrityReport === "string" ? JSON.parse(integrityReport) : integrityReport;
+      if (parsed && typeof parsed === "object") {
+        return {
+          violations: Array.isArray(parsed.violations) ? parsed.violations : [],
+          violationCount: typeof parsed.violationCount === "number" ? parsed.violationCount : 0,
+          riskLevel: parsed.riskLevel || "low",
+          flagged: !!parsed.flagged,
+        };
+      }
+    } catch (e) {
+      console.error("Failed to parse integrity report", e);
+    }
+    return null;
+  }, [integrityReport]);
 
   // Build radar chart data from sub_scores safely
   const subScores = safeResult.sub_scores || {};
@@ -341,6 +361,54 @@ export default function ResultsPanel({ result, language, skill, prompt, onRetry,
             </div>
           </div>
         </div>
+
+        {/* Integrity Logs / Timeline */}
+        {reportObj && reportObj.violations.length > 0 && (
+          <div className="glass-card" style={{ padding: "28px", marginBottom: "32px", border: "1px solid rgba(244, 63, 94, 0.2)" }}>
+            <h3 style={{ fontSize: "18px", fontWeight: 700, marginBottom: "16px", color: "var(--brand-rose)", display: "flex", alignItems: "center", gap: "8px" }}>
+              🛡️ Integrity Log ({reportObj.violations.length} event{reportObj.violations.length !== 1 ? "s" : ""})
+            </h3>
+            <p className="text-secondary" style={{ fontSize: "14px", marginBottom: "16px" }}>
+              The following security events were recorded during this assessment session:
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              {reportObj.violations.map((v: any, index: number) => {
+                const timeStr = v.timestamp ? new Date(v.timestamp).toLocaleTimeString() : `Event #${index + 1}`;
+                const labelMap: Record<string, string> = {
+                  tab_switch: "💻 Tab Switch",
+                  window_blur: "📴 Left Window Focus",
+                  copy_attempt: "📋 Copy Attempt",
+                  paste_attempt: "📋 Paste Attempt",
+                  right_click: "🖱️ Right Clicked",
+                  mouse_leave: "🖱️ Left Screen Area",
+                  fullscreen_exit: "🖥️ Exited Fullscreen",
+                  keyboard_shortcut: "⌨️ Restricted Keypress",
+                  face_absent: "🔴 No Face Detected",
+                  multiple_faces: "👥 Multiple Faces Detected",
+                  looking_away: "👀 Looking Away",
+                  webcam_denied: "❌ Camera Denied",
+                };
+                return (
+                  <div key={index} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)" }}>
+                    <div>
+                      <span style={{ fontWeight: 600, fontSize: "14px", color: "var(--text-primary)" }}>
+                        {labelMap[v.type] || v.type}
+                      </span>
+                      {v.detail && (
+                        <span className="text-muted" style={{ fontSize: "12px", marginLeft: "12px" }}>
+                          ({v.detail})
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-muted" style={{ fontSize: "12px" }}>
+                      {timeStr}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Detailed Feedback */}
         <div className="glass-card" style={{ padding: "28px", marginBottom: "32px" }}>

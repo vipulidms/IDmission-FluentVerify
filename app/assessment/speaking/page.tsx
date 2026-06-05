@@ -271,6 +271,7 @@ function SpeakingContent() {
         prompt="Combined 5-part Speaking Assessment"
         onRetry={() => window.location.reload()}
         integrityRiskLevel={(result as any).integrityRiskLevel}
+        integrityReport={(result as any).integrityReport}
       />
     );
   }

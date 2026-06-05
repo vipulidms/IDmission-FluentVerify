@@ -74,6 +74,13 @@ export default function AdminDashboardClient({ users }: Props) {
 
 
   if (selectedAssessment) {
+    let integrityRiskLevel: "low" | "medium" | "high" = "low";
+    try {
+      if (selectedAssessment.integrityReport) {
+        integrityRiskLevel = JSON.parse(selectedAssessment.integrityReport).riskLevel || "low";
+      }
+    } catch {}
+
     return (
       <ResultsPanel
         result={{
@@ -95,6 +102,8 @@ export default function AdminDashboardClient({ users }: Props) {
         onRetry={() => {}}
         isHistoryView={true}
         onClose={() => setSelectedAssessment(null)}
+        integrityRiskLevel={integrityRiskLevel}
+        integrityReport={selectedAssessment.integrityReport}
       />
     );
   }

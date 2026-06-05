@@ -36,6 +36,7 @@ interface Assessment {
   strengths: string;
   improvements: string;
   feedback: string;
+  integrityReport?: string | null;
 }
 
 interface Props {
@@ -291,6 +292,13 @@ export default function DashboardClient({ session, assessments }: Props) {
   const [activeTab, setActiveTab] = useState<"overview" | "history">("overview");
 
   if (selectedAssessment) {
+    let integrityRiskLevel: "low" | "medium" | "high" = "low";
+    try {
+      if (selectedAssessment.integrityReport) {
+        integrityRiskLevel = JSON.parse(selectedAssessment.integrityReport).riskLevel || "low";
+      }
+    } catch {}
+
     return (
       <ResultsPanel
         result={{
@@ -312,6 +320,8 @@ export default function DashboardClient({ session, assessments }: Props) {
         onRetry={() => {}}
         isHistoryView={true}
         onClose={() => setSelectedAssessment(null)}
+        integrityRiskLevel={integrityRiskLevel}
+        integrityReport={selectedAssessment.integrityReport}
       />
     );
   }

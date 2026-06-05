@@ -25,7 +25,7 @@ export interface FaceMonitorState {
 
 // Heuristic: if the face bounding box top is in the lower 78% of frame
 // the user is likely looking down at notes (increased from 0.6 to prevent false positives)
-const LOOKING_DOWN_THRESHOLD = 0.78;
+const LOOKING_DOWN_THRESHOLD = 0.60;
 
 // How long (ms) face must be absent before firing violation
 const ABSENT_DEBOUNCE_MS = 3000;
@@ -243,13 +243,13 @@ export function useFaceMonitor(
 
 export function getFaceStatusDisplay(status: FaceStatus): { icon: string; label: string; color: string } {
   switch (status) {
-    case "ok":           return { icon: "🟢", label: "Face OK",        color: "#10b981" };
-    case "absent":       return { icon: "🔴", label: "No Face",        color: "#f43f5e" };
-    case "multiple":     return { icon: "🟡", label: "Multiple Faces", color: "#f59e0b" };
-    case "looking_away": return { icon: "🟠", label: "Looking Away",   color: "#f97316" };
-    case "loading":      return { icon: "⚪", label: "Loading AI...",  color: "#94a3b8" };
-    case "denied":       return { icon: "❌", label: "Camera Denied",  color: "#f43f5e" };
-    case "requesting":   return { icon: "⏳", label: "Requesting...",  color: "#94a3b8" };
-    default:             return { icon: "⚪", label: "Idle",           color: "#475569" };
+    case "ok": return { icon: "🟢", label: "Face OK", color: "#10b981" };
+    case "absent": return { icon: "🔴", label: "No Face", color: "#f43f5e" };
+    case "multiple": return { icon: "🟡", label: "Multiple Faces", color: "#f59e0b" };
+    case "looking_away": return { icon: "🟠", label: "Looking Away", color: "#f97316" };
+    case "loading": return { icon: "⚪", label: "Loading AI...", color: "#94a3b8" };
+    case "denied": return { icon: "❌", label: "Camera Denied", color: "#f43f5e" };
+    case "requesting": return { icon: "⏳", label: "Requesting...", color: "#94a3b8" };
+    default: return { icon: "⚪", label: "Idle", color: "#475569" };
   }
 }

@@ -51,11 +51,12 @@ export async function POST(req: NextRequest) {
         });
       }
 
-    // Include riskLevel in response so ResultsPanel can show the badge
+    // Include riskLevel and full report in response so ResultsPanel can show details
     return NextResponse.json({
       ...result,
       integrityRiskLevel: integrityReport?.riskLevel ?? "low",
       integrityFlagged: integrityReport?.flagged ?? false,
+      integrityReport: integrityReport ? JSON.stringify(integrityReport) : null,
     });
   } catch (error) {
     console.error("Speaking assessment error:", error);
