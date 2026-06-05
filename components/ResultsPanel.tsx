@@ -205,9 +205,19 @@ export default function ResultsPanel({ result, language, skill, prompt, onRetry,
           <div className="hero-badge" style={{ display: "inline-flex", borderColor: `${color}60`, background: `${color}15`, color }}>
             {isHistoryView ? "📖 Assessment Details" : "✨ Assessment Complete"}
           </div>
-          {isVerified && (
+          {integrityRisk === "low" && (
             <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", marginLeft: "10px", padding: "5px 14px", background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.3)", borderRadius: "9999px", fontSize: "12px", fontWeight: 700, color: "#10b981", letterSpacing: "0.05em", verticalAlign: "middle" }}>
               ✅ Verified
+            </div>
+          )}
+          {integrityRisk === "medium" && (
+            <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", marginLeft: "10px", padding: "5px 14px", background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.3)", borderRadius: "9999px", fontSize: "12px", fontWeight: 700, color: "#f59e0b", letterSpacing: "0.05em", verticalAlign: "middle" }}>
+              ⚠️ Medium Risk
+            </div>
+          )}
+          {integrityRisk === "high" && (
+            <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", marginLeft: "10px", padding: "5px 14px", background: "rgba(244,63,94,0.12)", border: "1px solid rgba(244,63,94,0.3)", borderRadius: "9999px", fontSize: "12px", fontWeight: 700, color: "#f43f5e", letterSpacing: "0.05em", verticalAlign: "middle" }}>
+              🚩 High Risk
             </div>
           )}
           <h1 style={{ fontSize: "clamp(32px, 5vw, 52px)", fontWeight: 900, marginTop: "16px", marginBottom: "8px" }}>
