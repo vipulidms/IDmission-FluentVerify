@@ -276,35 +276,35 @@ function SpeakingContent() {
 
           {/* Preparation Phase */}
           {phase === "prepare" && parts[currentPart] && (
-            <div className="animate-scaleIn" style={{ textAlign: "center", padding: "60px 0" }}>
-              <div style={{ fontSize: "14px", color: "var(--brand-400)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "16px" }}>
+            <div className="animate-scaleIn" style={{ textAlign: "center", padding: "20px 0" }}>
+              <div style={{ fontSize: "13px", color: "var(--brand-400)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "8px" }}>
                 {parts[currentPart].title} (Part {currentPart + 1} of 5)
               </div>
-              <div style={{ fontSize: "80px", marginBottom: "24px", opacity: 0.9 }}>🧠</div>
-              <h2 style={{ fontSize: "28px", fontWeight: 800, marginBottom: "12px" }}>Preparation Time</h2>
-              <p className="text-secondary" style={{ marginBottom: "32px", fontSize: "16px" }}>
+              <div style={{ fontSize: "48px", marginBottom: "16px", opacity: 0.9 }}>🧠</div>
+              <h2 style={{ fontSize: "24px", fontWeight: 800, marginBottom: "8px" }}>Preparation Time</h2>
+              <p className="text-secondary" style={{ marginBottom: "20px", fontSize: "15px" }}>
                 Read the prompt carefully and organise your thoughts
               </p>
 
               <div style={{
-                fontSize: "80px",
+                fontSize: "64px",
                 fontWeight: 900,
                 fontFamily: "Outfit, sans-serif",
                 background: "var(--gradient-brand)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
-                marginBottom: "24px",
+                marginBottom: "20px",
               }}>
                 {prepCountdown}s
               </div>
 
               <div style={{
-                padding: "24px 32px",
+                padding: "16px 24px",
                 background: "rgba(99,102,241,0.08)",
                 border: "1px solid rgba(99,102,241,0.2)",
                 borderRadius: "var(--radius-lg)",
-                fontSize: "17px",
-                lineHeight: "1.7",
+                fontSize: "15px",
+                lineHeight: "1.6",
                 textAlign: "left",
                 maxWidth: "600px",
                 margin: "0 auto",
@@ -317,38 +317,38 @@ function SpeakingContent() {
 
           {/* Recording Phase */}
           {phase === "record" && parts[currentPart] && (
-            <div className="animate-scaleIn" style={{ textAlign: "center" }}>
-              <div style={{ fontSize: "14px", color: "var(--brand-400)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "16px" }}>
+            <div className="animate-scaleIn" style={{ textAlign: "center", padding: "20px 0" }}>
+              <div style={{ fontSize: "13px", color: "var(--brand-400)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "8px" }}>
                 {parts[currentPart].title} (Part {currentPart + 1} of 5)
               </div>
-              <h2 style={{ fontSize: "28px", fontWeight: 800, marginBottom: "8px" }}>
+              <h2 style={{ fontSize: "24px", fontWeight: 800, marginBottom: "8px" }}>
                 {isRecording ? "🎙️ Recording..." : "Ready to Record"}
               </h2>
-              <p className="text-secondary" style={{ marginBottom: "32px", whiteSpace: "pre-wrap" }}>{parts[currentPart].prompt}</p>
+              <p className="text-secondary" style={{ marginBottom: "20px", whiteSpace: "pre-wrap", fontSize: "15px" }}>{parts[currentPart].prompt}</p>
 
               {/* Live Transcription Preview */}
               {currentTranscription && (
                 <div style={{
-                  padding: "16px 20px",
+                  padding: "12px 16px",
                   background: "rgba(99,102,241,0.05)",
                   border: "1px solid rgba(99,102,241,0.15)",
                   borderRadius: "var(--radius-md)",
                   fontSize: "14px",
                   textAlign: "left",
-                  lineHeight: "1.7",
-                  marginBottom: "24px",
+                  lineHeight: "1.6",
+                  marginBottom: "20px",
                   color: "var(--text-secondary)",
-                  maxHeight: "120px",
+                  maxHeight: "100px",
                   overflowY: "auto",
                 }}>
-                  <div style={{ fontSize: "11px", color: "var(--text-muted)", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.08em" }}>LIVE TRANSCRIPTION</div>
+                  <div style={{ fontSize: "11px", color: "var(--text-muted)", marginBottom: "4px", textTransform: "uppercase", letterSpacing: "0.08em" }}>LIVE TRANSCRIPTION</div>
                   {currentTranscription}
                 </div>
               )}
 
               {/* Waveform Animation */}
               {isRecording && (
-                <div className="waveform" style={{ justifyContent: "center", marginBottom: "24px" }}>
+                <div className="waveform" style={{ justifyContent: "center", marginBottom: "20px", height: "30px" }}>
                   {[...Array(9)].map((_, i) => (
                     <div key={i} className="waveform-bar" style={{ animationDelay: `${i * 0.1}s` }} />
                   ))}
@@ -356,9 +356,9 @@ function SpeakingContent() {
               )}
 
               {/* Timer */}
-              <div style={{ fontSize: "48px", fontWeight: 900, fontFamily: "Outfit, sans-serif", marginBottom: "24px", color: recordingTime > parts[currentPart].speakingTime * 0.8 ? "var(--brand-rose)" : "var(--text-primary)" }}>
+              <div style={{ fontSize: "40px", fontWeight: 900, fontFamily: "Outfit, sans-serif", marginBottom: "20px", color: recordingTime > parts[currentPart].speakingTime * 0.8 ? "var(--brand-rose)" : "var(--text-primary)" }}>
                 {Math.floor(recordingTime / 60).toString().padStart(2, "0")}:{(recordingTime % 60).toString().padStart(2, "0")}
-                <span style={{ fontSize: "16px", color: "var(--text-muted)", marginLeft: "8px" }}>/ {parts[currentPart].speakingTime}s</span>
+                <span style={{ fontSize: "14px", color: "var(--text-muted)", marginLeft: "8px" }}>/ {parts[currentPart].speakingTime}s</span>
               </div>
 
               {/* Record Button */}
@@ -369,6 +369,7 @@ function SpeakingContent() {
                     onClick={startRecording}
                     className="record-btn record-btn-idle"
                     title="Start Recording"
+                    style={{ width: "64px", height: "64px", fontSize: "28px" }}
                   >
                     🎤
                   </button>
@@ -378,12 +379,13 @@ function SpeakingContent() {
                     onClick={stopRecording}
                     className="record-btn record-btn-recording"
                     title="Stop Recording"
+                    style={{ width: "64px", height: "64px", fontSize: "28px" }}
                   >
                     ⏹️
                   </button>
                 )}
               </div>
-              <p className="text-muted" style={{ marginTop: "16px", fontSize: "13px" }}>
+              <p className="text-muted" style={{ marginTop: "12px", fontSize: "13px" }}>
                 {isRecording ? "Click to stop recording" : "Click to start recording"}
               </p>
             </div>

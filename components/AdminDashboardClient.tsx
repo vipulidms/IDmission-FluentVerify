@@ -120,8 +120,9 @@ export default function AdminDashboardClient({ users }: Props) {
         </div>
 
         <div className="glass-card" style={{ padding: "1px", overflow: "hidden" }}>
-          <table className="history-table" style={{ margin: 0, width: "100%", borderCollapse: "collapse" }}>
-            <thead>
+          <div className="table-responsive">
+            <table className="history-table" style={{ margin: 0, width: "100%", borderCollapse: "collapse" }}>
+              <thead>
               <tr style={{ background: "rgba(255,255,255,0.02)" }}>
                 <th style={{ padding: "20px" }}>Rank</th>
                 <th style={{ padding: "20px" }}>Candidate</th>
@@ -229,6 +230,7 @@ export default function AdminDashboardClient({ users }: Props) {
               )}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
 
