@@ -45,9 +45,6 @@ export default function HomePage() {
               <Link href="/assessment" className="btn btn-primary btn-lg">
                 Start Free Assessment →
               </Link>
-              <Link href="/auth/register" className="btn btn-ghost btn-lg">
-                Create Account
-              </Link>
             </div>
 
             {/* Stats */}
@@ -260,11 +257,8 @@ export default function HomePage() {
               Join thousands of learners who use IDmission FluentVerify to assess and improve their language skills.
             </p>
             <div style={{ display: "flex", gap: "16px", justifyContent: "center", flexWrap: "wrap", position: "relative" }}>
-              <Link href="/auth/register" className="btn btn-primary btn-lg">
-                Create Free Account
-              </Link>
-              <Link href="/assessment" className="btn btn-ghost btn-lg">
-                Try Without Account
+              <Link href="/assessment" className="btn btn-primary btn-lg">
+                Start Free Assessment
               </Link>
             </div>
           </div>

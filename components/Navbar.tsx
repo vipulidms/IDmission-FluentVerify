@@ -80,9 +80,6 @@ export default function Navbar() {
                 <Link href="/auth/login" className="btn btn-ghost btn-sm">
                   Sign in
                 </Link>
-                <Link href="/auth/register" className="btn btn-primary btn-sm">
-                  Get Started
-                </Link>
               </>
             )}
           </div>
