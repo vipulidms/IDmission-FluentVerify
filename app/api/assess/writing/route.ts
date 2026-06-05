@@ -1,0 +1,47 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { assessWriting } from "@/lib/gemini";
+import { prisma } from "@/lib/prisma";
+
+export async function POST(req: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    const { text, prompt, language, promptId } = await req.json();
+
+    if (!text || !prompt || !language) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    const result = await assessWriting(text, prompt, language);
+
+    // Save to DB if user is logged in
+    if (session?.user) {
+      const userId = (session.user as { id?: string }).id;
+      if (userId) {
+        await prisma.assessment.create({
+          data: {
+            userId,
+            language,
+            skill: "writing",
+            cefrLevel: result.cefr_level,
+            overallScore: result.overall_score,
+            grammarScore: result.sub_scores.grammar,
+            vocabularyScore: result.sub_scores.vocabulary,
+            coherenceScore: result.sub_scores.coherence,
+            prompt: promptId || prompt.substring(0, 200),
+            userResponse: text.substring(0, 2000),
+            strengths: JSON.stringify(result.strengths),
+            improvements: JSON.stringify(result.improvements),
+            feedback: result.detailed_feedback,
+          },
+        });
+      }
+    }
+
+    return NextResponse.json(result);
+  } catch (error) {
+    console.error("Writing assessment error:", error);
+    return NextResponse.json({ error: "Assessment failed. Please try again." }, { status: 500 });
+  }
+}

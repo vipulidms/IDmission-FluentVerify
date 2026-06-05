@@ -1,0 +1,60 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String       @id @default(cuid())
+  email         String       @unique
+  name          String?
+  firstName     String?
+  lastName      String?
+  mobileNumber  String?
+  password      String?
+  image         String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  role          String       @default("user")
+  assessments   Assessment[]
+}
+
+model Assessment {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  language    String   // "english" | "german"
+  skill       String   // "speaking" | "writing" | "listening" | "reading"
+  cefrLevel   String   // "A1" | "A2" | "B1" | "B2" | "C1" | "C2"
+  overallScore Int     // 0-100
+  grammarScore Int?
+  vocabularyScore Int?
+  fluencyScore    Int?
+  coherenceScore  Int?
+  prompt      String   // The question/prompt given
+  userResponse String  // The user's answer (text or transcription)
+  strengths   String   // JSON array stored as string
+  improvements String  // JSON array stored as string
+  feedback    String   // Detailed AI feedback
+  timeTaken   Int?     // seconds
+  createdAt   DateTime @default(now())
+}
+
+model SpeakingQuestionSet {
+  id                String   @id @default(cuid())
+  language          String   // "english" | "german"
+  level             String   // "A1", "A2", "B1", "B2", "C1", "C2"
+  sec1Topic         String
+  sec1FollowUp1     String
+  sec1FollowUp2     String
+  sec2Topic         String
+  sec3Paragraph     String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
