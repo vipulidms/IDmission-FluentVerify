@@ -25,13 +25,13 @@ export interface FaceMonitorState {
 
 // Heuristic: if the face bounding box top is in the lower 78% of frame
 // the user is likely looking down at notes (increased from 0.6 to prevent false positives)
-const LOOKING_DOWN_THRESHOLD = 0.60;
+const LOOKING_DOWN_THRESHOLD = 0.40;
 
 // How long (ms) face must be absent before firing violation
 const ABSENT_DEBOUNCE_MS = 3000;
 
 // Detection interval (ms)
-const DETECTION_INTERVAL_MS = 1500;
+const DETECTION_INTERVAL_MS = 2000;
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
