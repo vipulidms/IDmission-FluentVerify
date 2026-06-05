@@ -62,6 +62,7 @@ function SpeakingContent() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recognitionRef = useRef<any>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const isRecordingActiveRef = useRef(false);
 
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -115,6 +116,8 @@ function SpeakingContent() {
     if (!SpeechRecognition) return;
 
     setCurrentTranscription("");
+    setError(""); // Clear previous error messages
+
     const recognition = new SpeechRecognition();
     recognition.lang = language === "english" ? "en-US" : "de-DE";
     recognition.continuous = true;
@@ -132,17 +135,59 @@ function SpeakingContent() {
       setCurrentTranscription(finalTranscript + interimTranscript);
     };
 
-    recognition.onerror = () => setError("Speech recognition failed. Please type your response instead.");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    recognition.onerror = (event: any) => {
+      console.error("[SpeechRecognition] Error event:", event.error);
+      if (event.error === "no-speech") {
+        // "no-speech" is transient silence. Don't show scary error message to user.
+        return;
+      }
+      if (event.error === "not-allowed") {
+        setError("Microphone permission denied. Please allow microphone access.");
+        stopRecording();
+      } else if (event.error === "audio-capture") {
+        setError("No microphone detected. Please check your system settings.");
+        stopRecording();
+      } else {
+        setError("Speech recognition issue detected. Please speak clearly into your microphone.");
+      }
+    };
+
+    recognition.onend = () => {
+      // If we are still supposed to be recording, restart to prevent silent cutoff
+      if (isRecordingActiveRef.current) {
+        try {
+          recognition.start();
+        } catch (e) {
+          // ignore if already running
+        }
+      }
+    };
+
     recognition.start();
     recognitionRef.current = recognition;
+    isRecordingActiveRef.current = true;
     setIsRecording(true);
     setRecordingTime(0);
+    
+    if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = setInterval(() => setRecordingTime((prev) => prev + 1), 1000);
   };
 
   const stopRecording = () => {
-    if (recognitionRef.current) recognitionRef.current.stop();
-    if (timerRef.current) clearInterval(timerRef.current);
+    isRecordingActiveRef.current = false;
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch (e) {
+        // ignore
+      }
+      recognitionRef.current = null;
+    }
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
     setIsRecording(false);
   };
 
@@ -317,32 +362,36 @@ function SpeakingContent() {
             </button>
           </div>
 
-          {/* Video + canvas overlay */}
-          {webcamWidgetOpen && (
-            <div style={{ position: "relative", width: "160px", height: "120px" }}>
-              <video
-                ref={videoRef}
-                style={{ width: "160px", height: "120px", objectFit: "cover", display: "block", transform: "scaleX(-1)" }}
-                muted
-                playsInline
-                autoPlay
-              />
-              <canvas
-                ref={canvasRef}
-                width={160}
-                height={120}
-                style={{ position: "absolute", inset: 0, width: "160px", height: "120px", transform: "scaleX(-1)", pointerEvents: "none" }}
-              />
-              {modelLoading && (
-                <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", color: "var(--text-muted)", flexDirection: "column", gap: "6px" }}>
-                  <div className="spinner" style={{ width: "20px", height: "20px" }} />
-                  <span>Loading AI...</span>
-                </div>
-              )}
-              {/* Status dot */}
-              <div style={{ position: "absolute", top: "6px", left: "6px", width: "8px", height: "8px", borderRadius: "50%", background: faceDisplay.color, boxShadow: `0 0 6px ${faceDisplay.color}` }} />
-            </div>
-          )}
+          {/* Video + canvas overlay - always mounted, but toggled via height & overflow to keep tracking running in background */}
+          <div style={{
+            position: "relative",
+            width: "160px",
+            height: webcamWidgetOpen ? "120px" : "0px",
+            overflow: "hidden",
+            transition: "height 0.3s ease",
+          }}>
+            <video
+              ref={videoRef}
+              style={{ width: "160px", height: "120px", objectFit: "cover", display: "block", transform: "scaleX(-1)" }}
+              muted
+              playsInline
+              autoPlay
+            />
+            <canvas
+              ref={canvasRef}
+              width={160}
+              height={120}
+              style={{ position: "absolute", inset: 0, width: "160px", height: "120px", transform: "scaleX(-1)", pointerEvents: "none" }}
+            />
+            {modelLoading && (
+              <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", color: "var(--text-muted)", flexDirection: "column", gap: "6px" }}>
+                <div className="spinner" style={{ width: "20px", height: "20px" }} />
+                <span>Loading AI...</span>
+              </div>
+            )}
+            {/* Status dot */}
+            <div style={{ position: "absolute", top: "6px", left: "6px", width: "8px", height: "8px", borderRadius: "50%", background: faceDisplay.color, boxShadow: `0 0 6px ${faceDisplay.color}` }} />
+          </div>
 
           {/* Face count badge */}
           {webcamWidgetOpen && faceCount > 0 && (
@@ -352,10 +401,6 @@ function SpeakingContent() {
           )}
         </div>
       )}
-
-      {/* ── Always-mounted hidden video + canvas (refs needed by useFaceMonitor) */}
-      <video ref={videoRef} style={{ display: "none" }} muted playsInline autoPlay />
-      <canvas ref={canvasRef} style={{ display: "none" }} width={320} height={240} />
 
       <div className="container" style={{ paddingBottom: "80px" }}>
         <div className="breadcrumb" style={{ paddingTop: "32px" }}>

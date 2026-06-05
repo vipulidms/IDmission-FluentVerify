@@ -90,6 +90,17 @@ export function useFaceMonitor(
     }
   }, [videoRef, onViolation]);
 
+  // Keep video srcObject in sync with streamRef.current when mounts/changes
+  useEffect(() => {
+    if (cameraEnabled && streamRef.current && videoRef.current) {
+      const video = videoRef.current;
+      if (video.srcObject !== streamRef.current) {
+        video.srcObject = streamRef.current;
+        video.play().catch((err) => console.error("[FaceMonitor] Error playing video:", err));
+      }
+    }
+  }, [cameraEnabled, videoRef]);
+
   // Load MediaPipe FaceDetector
   useEffect(() => {
     if (!cameraEnabled) return;
