@@ -98,6 +98,7 @@ function SpeakingContent() {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) return;
 
+    setCurrentTranscription("");
     const recognition = new SpeechRecognition();
     recognition.lang = language === "english" ? "en-US" : "de-DE";
     recognition.continuous = true;
@@ -151,7 +152,7 @@ function SpeakingContent() {
   }, [recordingTime]);
 
   useEffect(() => {
-    if (phase === "record" && !isRecording && currentTranscription === "") {
+    if (phase === "record" && !isRecording) {
       startRecording();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
