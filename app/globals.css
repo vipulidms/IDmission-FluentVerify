@@ -1170,3 +1170,57 @@ img {
   color: var(--text-secondary);
   margin-bottom: 32px;
 }
+
+/* ===== SPEAKING GRID LAYOUT ===== */
+.speaking-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+
+@media (min-width: 768px) {
+  .speaking-grid {
+    grid-template-columns: 280px 1fr;
+    gap: 32px;
+  }
+}
+
+/* Custom animations for timer and borders */
+@keyframes pulse-timer {
+  0%, 100% {
+    transform: scale(1);
+    color: var(--brand-rose);
+    text-shadow: 0 0 10px rgba(244, 63, 94, 0);
+  }
+  50% {
+    transform: scale(1.08);
+    color: #ff4d6d;
+    text-shadow: 0 0 25px rgba(244, 63, 94, 0.9);
+  }
+}
+
+@keyframes flash-border-rose {
+  0%, 100% {
+    border-color: rgba(244, 63, 94, 0.2);
+    box-shadow: 0 0 20px rgba(244, 63, 94, 0.1);
+  }
+  50% {
+    border-color: rgba(244, 63, 94, 0.95);
+    box-shadow: 0 0 35px rgba(244, 63, 94, 0.45);
+  }
+}
+
+.animate-pulse-timer {
+  animation: pulse-timer 1s ease-in-out infinite;
+}
+
+.animate-flash-border-rose {
+  animation: flash-border-rose 1.2s ease-in-out infinite !important;
+}
+
+@media (max-width: 768px) {
+  .hidden-mobile {
+    display: none !important;
+  }
+}
+

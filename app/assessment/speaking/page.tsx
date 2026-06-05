@@ -38,6 +38,7 @@ function SpeakingContent() {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [currentTranscription, setCurrentTranscription] = useState("");
+  const [isAutoSubmitting, setIsAutoSubmitting] = useState(false);
 
   const [transcriptions, setTranscriptions] = useState<Array<{ phase: string; prompt: string; transcription: string }>>([]);
 
@@ -113,7 +114,7 @@ function SpeakingContent() {
         { title: "Part 2: Follow-up Question 1", prompt: qSet.sec1FollowUp1,   preparationTime: 15, speakingTime: 45, phaseLabel: "Section 1 / Q1" },
         { title: "Part 3: Follow-up Question 2", prompt: qSet.sec1FollowUp2,   preparationTime: 15, speakingTime: 45, phaseLabel: "Section 1 / Q2" },
         { title: "Part 4: New Topic",            prompt: qSet.sec2Topic,       preparationTime: 15, speakingTime: 60, phaseLabel: "Section 2" },
-        { title: "Part 5: Reading Paragraph",    prompt: "Please read the following paragraph aloud:\n\n" + qSet.sec3Paragraph, preparationTime: 10, speakingTime: 60, phaseLabel: "Section 3" },
+        { title: "Part 5: Reading Paragraph",    prompt: "Please read the following paragraph aloud:\n\n" + qSet.sec3Paragraph, preparationTime: 15, speakingTime: 60, phaseLabel: "Section 3" },
       ]
     : [];
 
@@ -216,7 +217,14 @@ function SpeakingContent() {
     if (phase === "record" && isRecording && parts[currentPart]) {
       if (recordingTime >= parts[currentPart].speakingTime) {
         stopRecording();
-        handleNextPart();
+        
+        setIsAutoSubmitting(true);
+        const autoSubmitTimer = setTimeout(() => {
+          setIsAutoSubmitting(false);
+          handleNextPart();
+        }, 1500);
+        
+        return () => clearTimeout(autoSubmitTimer);
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -373,94 +381,9 @@ function SpeakingContent() {
           </span>
         </div>
 
-        <div style={{ maxWidth: "720px", margin: "0 auto" }}>
+        <div style={{ maxWidth: (phase === "prepare" || phase === "record") ? "1000px" : "720px", margin: "0 auto", transition: "max-width 0.3s ease" }}>
 
-          {/* ── Centered Webcam Preview Widget ── */}
-          {cameraEnabled && (phase === "intro" || phase === "prepare" || phase === "record") && (
-            <div style={{ 
-              display: "flex", 
-              flexDirection: "column", 
-              alignItems: "center", 
-              marginBottom: "24px",
-              marginTop: phase === "intro" ? "0" : "20px"
-            }}>
-              <div style={{ 
-                position: "relative", 
-                width: "200px", 
-                height: "150px", 
-                borderRadius: "16px", 
-                overflow: "hidden", 
-                boxShadow: "0 12px 36px rgba(0,0,0,0.5)", 
-                border: `2px solid ${faceDisplay.color}`, 
-                background: "rgba(10,14,39,0.95)",
-                transition: "border-color 0.3s ease"
-              }}>
-                <video
-                  ref={videoRef}
-                  style={{ width: "200px", height: "150px", objectFit: "cover", display: "block", transform: "scaleX(-1)" }}
-                  muted
-                  playsInline
-                  autoPlay
-                />
-                <canvas
-                  ref={canvasRef}
-                  width={200}
-                  height={150}
-                  style={{ position: "absolute", inset: 0, width: "200px", height: "150px", transform: "scaleX(-1)", pointerEvents: "none" }}
-                />
-                {modelLoading && (
-                  <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px", color: "var(--text-muted)", flexDirection: "column", gap: "8px" }}>
-                    <div className="spinner" style={{ width: "24px", height: "24px" }} />
-                    <span>Loading AI...</span>
-                  </div>
-                )}
-                {/* Status Dot */}
-                <div style={{ position: "absolute", top: "8px", left: "8px", width: "10px", height: "10px", borderRadius: "50%", background: faceDisplay.color, boxShadow: `0 0 8px ${faceDisplay.color}` }} />
-                
-                {/* Face Status text badge */}
-                <div style={{ 
-                  position: "absolute", 
-                  bottom: "8px", 
-                  left: "50%", 
-                  transform: "translateX(-50%)", 
-                  background: "rgba(10, 14, 39, 0.85)", 
-                  padding: "4px 10px", 
-                  borderRadius: "12px", 
-                  fontSize: "10px", 
-                  fontWeight: 700, 
-                  color: faceDisplay.color, 
-                  display: "flex", 
-                  alignItems: "center", 
-                  gap: "4px",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.05em",
-                  border: `1px solid ${faceDisplay.color}40`,
-                  backdropFilter: "blur(4px)"
-                }}>
-                  <span>{faceDisplay.icon}</span>
-                  <span>{faceDisplay.label}</span>
-                </div>
-              </div>
-              
-              {/* Face count overlay if multiple */}
-              {faceCount > 1 && (
-                <div style={{ 
-                  marginTop: "8px", 
-                  fontSize: "12px", 
-                  fontWeight: 600, 
-                  color: "#f43f5e", 
-                  background: "rgba(244,63,94,0.12)", 
-                  padding: "4px 12px", 
-                  borderRadius: "8px",
-                  border: "1px solid rgba(244,63,94,0.25)"
-                }}>
-                  ⚠️ {faceCount} faces detected
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* ── Loading ─────────────────────────────────────────────────────── */}
+          {/* ── Loading Phase ─────────────────────────────────────────────────── */}
           {phase === "loading" && (
             <div style={{ textAlign: "center", padding: "80px 0" }}>
               <div className="spinner" style={{ width: "48px", height: "48px", margin: "0 auto 24px" }} />
@@ -468,169 +391,7 @@ function SpeakingContent() {
             </div>
           )}
 
-          {/* ── Intro ───────────────────────────────────────────────────────── */}
-          {phase === "intro" && qSet && (
-            <div className="animate-fadeInUp">
-              <h1 style={{ fontSize: "36px", fontWeight: 900, marginBottom: "8px" }}>
-                🎤 Speaking <span className="gradient-text">Assessment</span>
-              </h1>
-              <p className="text-secondary" style={{ marginBottom: "36px" }}>
-                This assessment consists of 5 parts. You will be given preparation time before each part.
-              </p>
-
-              {!browserSupported && (
-                <div className="alert alert-info" style={{ marginBottom: "24px" }}>
-                  🔔 Speech recognition may not be supported in your browser. You can type your response instead.
-                </div>
-              )}
-
-              <div className="glass-card" style={{ padding: "32px", marginBottom: "24px" }}>
-                <h3 style={{ fontSize: "18px", fontWeight: 800, marginBottom: "16px" }}>Assessment Structure:</h3>
-                <ul style={{ paddingLeft: "20px", lineHeight: "1.8", color: "var(--text-secondary)" }}>
-                  <li><strong>Part 1:</strong> Introduction Topic</li>
-                  <li><strong>Part 2 &amp; 3:</strong> Follow-up Questions</li>
-                  <li><strong>Part 4:</strong> New Topic</li>
-                  <li><strong>Part 5:</strong> Reading Paragraph</li>
-                </ul>
-              </div>
-
-              {/* ── Camera & Microphone Permission Setup Card ─────────────────── */}
-              <div style={{ padding: "24px 28px", marginBottom: "24px", borderRadius: "16px", background: (cameraEnabled && micEnabled) ? "rgba(16,185,129,0.07)" : "rgba(76,127,237,0.07)", border: (cameraEnabled && micEnabled) ? "1px solid rgba(16,185,129,0.25)" : "1px solid rgba(76,127,237,0.25)" }}>
-                <div style={{ display: "flex", alignItems: "flex-start", gap: "16px" }}>
-                  <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: (cameraEnabled && micEnabled) ? "rgba(16,185,129,0.15)" : "rgba(76,127,237,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "22px", flexShrink: 0 }}>
-                    {(cameraEnabled && micEnabled) ? "✅" : "📷"}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 700, fontSize: "16px", marginBottom: "6px" }}>
-                      {(cameraEnabled && micEnabled) ? "Camera & Microphone Ready" : "Setup Camera & Microphone"}
-                    </div>
-                    <p className="text-secondary" style={{ fontSize: "13px", lineHeight: 1.6, marginBottom: "14px" }}>
-                      {(cameraEnabled && micEnabled)
-                        ? "Both devices are configured and active. Your live centered camera preview is shown above."
-                        : "This assessment requires access to your camera and microphone. We use AI-powered face tracking and audio translation to evaluate your answers and verify integrity. Please click below to grant permissions."}
-                    </p>
-                    {!(cameraEnabled && micEnabled) && (
-                      <button
-                        onClick={requestCameraAndMic}
-                        className="btn btn-primary btn-sm"
-                        style={{ fontSize: "13px", display: "flex", alignItems: "center", gap: "6px" }}
-                      >
-                        🎤 Allow Device Permissions
-                      </button>
-                    )}
-                    {(cameraEnabled && micEnabled) && (
-                      <div style={{ fontSize: "13px", color: "#10b981", fontWeight: 600, display: "flex", alignItems: "center", gap: "6px" }}>
-                        🟢 Ready to start the assessment.
-                      </div>
-                    )}
-                    {permissionsError && (
-                      <div style={{ color: "#f43f5e", fontSize: "13px", marginTop: "8px", fontWeight: 600 }}>
-                        ⚠️ {permissionsError}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* ── Integrity Notice ────────────────────────────────────────── */}
-              <div style={{ padding: "14px 18px", marginBottom: "24px", borderRadius: "12px", background: "rgba(255,255,255,0.03)", border: "1px solid var(--border-subtle)", display: "flex", alignItems: "flex-start", gap: "12px" }}>
-                <span style={{ fontSize: "18px", flexShrink: 0 }}>🛡️</span>
-                <div style={{ fontSize: "13px", color: "var(--text-muted)", lineHeight: 1.6 }}>
-                  This assessment runs in <strong style={{ color: "var(--text-secondary)" }}>fullscreen mode</strong> with integrity monitoring enabled. Tab switches, copy/paste, right-click, and suspicious behaviour will be logged and reviewed by assessors.
-                </div>
-              </div>
-
-              <button
-                id="start-speaking-btn"
-                onClick={startPreparation}
-                className="btn btn-primary btn-lg"
-                style={{ width: "100%", opacity: (cameraEnabled && micEnabled) ? 1 : 0.6, cursor: (cameraEnabled && micEnabled) ? "pointer" : "not-allowed" }}
-                disabled={!(cameraEnabled && micEnabled)}
-              >
-                Start Assessment →
-              </button>
-              {!(cameraEnabled && micEnabled) && (
-                <p style={{ fontSize: "12px", color: "var(--text-muted)", textAlign: "center", marginTop: "8px" }}>
-                  Please allow camera and microphone permissions above to enable starting the assessment.
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* ── Preparation Phase ──────────────────────────────────────────── */}
-          {phase === "prepare" && parts[currentPart] && (
-            <div className="animate-scaleIn" style={{ textAlign: "center", padding: "10px 0" }}>
-              <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "12px", marginBottom: "20px" }}>
-                <div style={{ fontSize: "32px", opacity: 0.9 }}>🧠</div>
-                <div style={{ textAlign: "left" }}>
-                  <div style={{ fontSize: "12px", color: "var(--brand-400)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>
-                    Preparation Time — Part {currentPart + 1} of 5
-                  </div>
-                  <h2 style={{ fontSize: "20px", fontWeight: 800, margin: 0 }}>{parts[currentPart].title}</h2>
-                </div>
-              </div>
-
-              <div style={{ padding: "20px", background: "rgba(255,255,255,0.03)", border: "1px solid var(--border-subtle)", borderLeft: "3px solid var(--brand-primary)", borderRadius: "var(--radius-md)", fontSize: "16px", lineHeight: "1.6", textAlign: "left", maxWidth: "600px", margin: "0 auto 24px auto", whiteSpace: "pre-wrap" }}>
-                {parts[currentPart].prompt}
-              </div>
-
-              <p className="text-secondary" style={{ marginBottom: "8px", fontSize: "14px" }}>Recording starts automatically in</p>
-
-              <div style={{ fontSize: "56px", fontWeight: 900, fontFamily: "Outfit, sans-serif", background: "var(--gradient-brand)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                {prepCountdown}s
-              </div>
-            </div>
-          )}
-
-          {/* ── Recording Phase ────────────────────────────────────────────── */}
-          {phase === "record" && parts[currentPart] && (
-            <div className="animate-scaleIn" style={{ textAlign: "center", padding: "10px 0" }}>
-              <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "12px", marginBottom: "20px" }}>
-                <div style={{ fontSize: "32px", opacity: 0.9 }}>🎙️</div>
-                <div style={{ textAlign: "left" }}>
-                  <div style={{ fontSize: "12px", color: "var(--brand-rose)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>
-                    Recording — Part {currentPart + 1} of 5
-                  </div>
-                  <h2 style={{ fontSize: "20px", fontWeight: 800, margin: 0 }}>{parts[currentPart].title}</h2>
-                </div>
-              </div>
-
-              <div style={{ padding: "20px", background: "rgba(255,255,255,0.03)", border: "1px solid var(--border-subtle)", borderLeft: "3px solid var(--brand-rose)", borderRadius: "var(--radius-md)", fontSize: "16px", lineHeight: "1.6", textAlign: "left", maxWidth: "600px", margin: "0 auto 24px auto", whiteSpace: "pre-wrap" }}>
-                {parts[currentPart].prompt}
-              </div>
-
-              {currentTranscription && (
-                <div style={{ padding: "12px 16px", background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderRadius: "var(--radius-md)", fontSize: "14px", textAlign: "left", lineHeight: "1.6", marginBottom: "20px", color: "var(--text-secondary)", maxHeight: "100px", overflowY: "auto" }}>
-                  <div style={{ fontSize: "11px", color: "var(--text-muted)", marginBottom: "4px", textTransform: "uppercase", letterSpacing: "0.08em" }}>LIVE TRANSCRIPTION</div>
-                  {currentTranscription}
-                </div>
-              )}
-
-              {isRecording && (
-                <div className="waveform" style={{ justifyContent: "center", marginBottom: "20px", height: "30px" }}>
-                  {[...Array(9)].map((_, i) => (
-                    <div key={i} className="waveform-bar" style={{ animationDelay: `${i * 0.1}s` }} />
-                  ))}
-                </div>
-              )}
-
-              <div style={{ fontSize: "40px", fontWeight: 900, fontFamily: "Outfit, sans-serif", marginBottom: "20px", color: recordingTime > parts[currentPart].speakingTime * 0.8 ? "var(--brand-rose)" : "var(--text-primary)" }}>
-                {Math.floor(recordingTime / 60).toString().padStart(2, "0")}:{(recordingTime % 60).toString().padStart(2, "0")}
-                <span style={{ fontSize: "14px", color: "var(--text-muted)", marginLeft: "8px" }}>/ {parts[currentPart].speakingTime}s</span>
-              </div>
-
-              <div style={{ display: "flex", gap: "16px", justifyContent: "center", alignItems: "center" }}>
-                {!isRecording ? (
-                  <button id="record-btn" onClick={startRecording} className="record-btn record-btn-idle" title="Start Recording" style={{ width: "64px", height: "64px", fontSize: "28px" }}>🎤</button>
-                ) : (
-                  <button id="stop-record-btn" onClick={() => { stopRecording(); handleNextPart(); }} className="record-btn record-btn-recording" title="Stop Recording" style={{ width: "64px", height: "64px", fontSize: "28px" }}>⏹️</button>
-                )}
-              </div>
-              <p className="text-muted" style={{ marginTop: "12px", fontSize: "13px" }}>{isRecording ? "Click to stop recording" : "Click to start recording"}</p>
-            </div>
-          )}
-
-          {/* ── Submitting ─────────────────────────────────────────────────── */}
+          {/* ── Submitting Phase ───────────────────────────────────────────────── */}
           {phase === "submit" && (
             <div style={{ textAlign: "center", padding: "80px 0" }}>
               <div className="spinner" style={{ width: "48px", height: "48px", margin: "0 auto 24px" }} />
@@ -638,6 +399,459 @@ function SpeakingContent() {
               <p className="text-secondary">This usually takes 10–20 seconds</p>
             </div>
           )}
+
+          {/* ── Main Workspace: Intro, Prepare, & Record ─────────────────────── */}
+          {(phase === "intro" || phase === "prepare" || phase === "record") && (
+            <>
+              {/* Progress Step Indicator (Prepare & Record phases) */}
+              {(phase === "prepare" || phase === "record") && (
+                <div style={{ 
+                  position: "relative",
+                  marginBottom: "32px", 
+                  background: "rgba(255, 255, 255, 0.02)", 
+                  border: "1px solid var(--border-subtle)", 
+                  borderRadius: "16px", 
+                  padding: "20px 24px", 
+                  backdropFilter: "blur(12px)",
+                  boxShadow: "0 8px 32px rgba(0, 0, 0, 0.15)"
+                }}>
+                  {/* Steps Container */}
+                  <div style={{ 
+                    display: "flex", 
+                    alignItems: "center", 
+                    justifyContent: "space-between", 
+                    position: "relative",
+                    zIndex: 1,
+                    width: "100%"
+                  }}>
+                    {/* Track Line behind circles */}
+                    <div style={{
+                      position: "absolute",
+                      top: "14px",
+                      left: "10%",
+                      right: "10%",
+                      height: "3px",
+                      background: "rgba(255, 255, 255, 0.07)",
+                      borderRadius: "2px",
+                      zIndex: 0
+                    }} />
+
+                    {/* Active / Completed Fill Line */}
+                    <div style={{
+                      position: "absolute",
+                      top: "14px",
+                      left: "10%",
+                      width: `${currentPart * 20}%`,
+                      height: "3px",
+                      background: "linear-gradient(90deg, #10b981, #4c7fed)",
+                      borderRadius: "2px",
+                      zIndex: 0,
+                      transition: "width 0.4s ease"
+                    }} />
+                    {parts.map((p, idx) => {
+                      const isCompleted = idx < currentPart;
+                      const isActive = idx === currentPart;
+                      
+                      let stepBg = "var(--bg-primary)";
+                      let borderColor = "var(--border-subtle)";
+                      let textColor = "var(--text-muted)";
+                      let titleColor = "var(--text-secondary)";
+                      
+                      if (isCompleted) {
+                        stepBg = "var(--bg-primary)";
+                        borderColor = "#10b981";
+                        textColor = "#10b981";
+                        titleColor = "var(--text-primary)";
+                      } else if (isActive) {
+                        stepBg = "var(--bg-primary)";
+                        borderColor = phase === "record" ? "var(--brand-rose)" : "#4c7fed";
+                        textColor = phase === "record" ? "var(--brand-rose)" : "#4c7fed";
+                        titleColor = "var(--text-primary)";
+                      }
+
+                      return (
+                        <div key={idx} style={{ 
+                          display: "flex", 
+                          flexDirection: "column",
+                          alignItems: "center",
+                          gap: "8px",
+                          flex: 1,
+                          textAlign: "center"
+                        }}>
+                          {/* Circle Node */}
+                          <div style={{ 
+                            position: "relative",
+                            zIndex: 2,
+                            width: "28px", 
+                            height: "28px", 
+                            borderRadius: "50%", 
+                            background: stepBg, 
+                            border: `2.5px solid ${borderColor}`, 
+                            display: "flex", 
+                            alignItems: "center", 
+                            justifyContent: "center", 
+                            fontSize: "12px", 
+                            fontWeight: 800, 
+                            color: textColor,
+                            transition: "all 0.3s ease",
+                            boxShadow: isActive ? `0 0 14px ${borderColor}60` : "none"
+                          }}>
+                            {isCompleted ? "✓" : idx + 1}
+                          </div>
+
+                          {/* Step Label */}
+                          <div className="hidden-mobile" style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                            <span style={{ fontSize: "9px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: isActive ? textColor : "var(--text-muted)" }}>
+                              Part {idx + 1}
+                            </span>
+                            <span style={{ fontSize: "11px", fontWeight: 600, color: titleColor, whiteSpace: "nowrap" }}>
+                              {idx === 0 ? "Topic Intro" : idx === 1 || idx === 2 ? `Follow-up ${idx}` : idx === 3 ? "New Topic" : "Paragraph"}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <div className={phase === "intro" ? "flex flex-col items-center" : "speaking-grid"}>
+              
+              {/* Left Column / Control Panel Card */}
+              <div 
+                className={
+                  phase === "intro" 
+                    ? "flex flex-col items-center" 
+                    : `glass-card p-6 flex flex-col items-center justify-between relative overflow-hidden ${
+                        phase === "record" && recordingTime >= parts[currentPart].speakingTime - 5 
+                          ? "animate-flash-border-rose" 
+                          : ""
+                      }`
+                } 
+                style={{ 
+                  width: "100%", 
+                  maxWidth: phase === "intro" ? "240px" : "100%",
+                  minHeight: phase === "intro" ? "auto" : "380px",
+                  marginBottom: phase === "intro" ? "24px" : "0",
+                  padding: phase === "intro" ? "0" : "32px 24px"
+                }}
+              >
+                {/* Webcam Preview Widget */}
+                {cameraEnabled && (
+                  <div style={{ 
+                    display: "flex", 
+                    flexDirection: "column", 
+                    alignItems: "center"
+                  }}>
+                    <div style={{ 
+                      position: "relative", 
+                      width: "200px", 
+                      height: "150px", 
+                      borderRadius: "16px", 
+                      overflow: "hidden", 
+                      boxShadow: "0 12px 36px rgba(0,0,0,0.5)", 
+                      border: `2px solid ${faceDisplay.color}`, 
+                      background: "rgba(10,14,39,0.95)",
+                      transition: "border-color 0.3s ease"
+                    }}>
+                      <video
+                        ref={videoRef}
+                        style={{ width: "200px", height: "150px", objectFit: "cover", display: "block", transform: "scaleX(-1)" }}
+                        muted
+                        playsInline
+                        autoPlay
+                      />
+                      <canvas
+                        ref={canvasRef}
+                        width={200}
+                        height={150}
+                        style={{ position: "absolute", inset: 0, width: "200px", height: "150px", transform: "scaleX(-1)", pointerEvents: "none" }}
+                      />
+                      {modelLoading && (
+                        <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px", color: "var(--text-muted)", flexDirection: "column", gap: "8px" }}>
+                          <div className="spinner" style={{ width: "24px", height: "24px" }} />
+                          <span>Loading AI...</span>
+                        </div>
+                      )}
+                      {/* Status Dot */}
+                      <div style={{ position: "absolute", top: "8px", left: "8px", width: "10px", height: "10px", borderRadius: "50%", background: faceDisplay.color, boxShadow: `0 0 8px ${faceDisplay.color}` }} />
+                      
+                      {/* Face Status text badge */}
+                      <div style={{ 
+                        position: "absolute", 
+                        bottom: "8px", 
+                        left: "50%", 
+                        transform: "translateX(-50%)", 
+                        background: "rgba(10, 14, 39, 0.85)", 
+                        padding: "4px 10px", 
+                        borderRadius: "12px", 
+                        fontSize: "10px", 
+                        fontWeight: 700, 
+                        color: faceDisplay.color, 
+                        display: "flex", 
+                        alignItems: "center", 
+                        gap: "4px",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                        border: `1px solid ${faceDisplay.color}40`,
+                        backdropFilter: "blur(4px)"
+                      }}>
+                        <span>{faceDisplay.icon}</span>
+                        <span>{faceDisplay.label}</span>
+                      </div>
+                    </div>
+                    
+                    {/* Face count overlay if multiple */}
+                    {faceCount > 1 && (
+                      <div style={{ 
+                        marginTop: "8px", 
+                        fontSize: "12px", 
+                        fontWeight: 600, 
+                        color: "#f43f5e", 
+                        background: "rgba(244,63,94,0.12)", 
+                        padding: "4px 12px", 
+                        borderRadius: "8px",
+                        border: "1px solid rgba(244,63,94,0.25)"
+                      }}>
+                        ⚠️ {faceCount} faces detected
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Info and Controls for Prepare & Record phases */}
+                {(phase === "prepare" || phase === "record") && parts[currentPart] && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "16px", alignItems: "center", width: "100%", flex: 1, justifyContent: "center", marginTop: "16px" }}>
+                    
+                    {/* Title / Header */}
+                    <div style={{ textAlign: "center" }}>
+                      <div style={{ fontSize: "11px", color: phase === "record" ? "var(--brand-rose)" : "var(--brand-400)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                        {phase === "record" ? "Recording" : "Preparation"} — Part {currentPart + 1} of 5
+                      </div>
+                      <h3 style={{ fontSize: "16px", fontWeight: 800, margin: "4px 0 0 0", color: "var(--text-primary)" }}>
+                        {parts[currentPart].title}
+                      </h3>
+                    </div>
+
+                    {/* Timer Widget */}
+                    {phase === "prepare" ? (
+                      <div style={{ textAlign: "center" }}>
+                        <p style={{ margin: "0 0 4px 0", fontSize: "12px", color: "var(--text-secondary)" }}>Recording starts in</p>
+                        <div style={{ fontSize: "40px", fontWeight: 900, fontFamily: "Outfit, sans-serif", background: "var(--gradient-brand)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", lineHeight: 1.1 }}>
+                          {prepCountdown}s
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center" }}>
+                        <div 
+                          className={recordingTime >= parts[currentPart].speakingTime - 5 ? "animate-pulse-timer" : ""} 
+                          style={{ 
+                            fontSize: "36px", 
+                            fontWeight: 900, 
+                            fontFamily: "Outfit, sans-serif", 
+                            lineHeight: 1.1,
+                            color: recordingTime >= parts[currentPart].speakingTime - 5 ? "var(--brand-rose)" : "var(--text-primary)",
+                            display: "inline-block"
+                          }}
+                        >
+                          {Math.floor(recordingTime / 60).toString().padStart(2, "0")}:{(recordingTime % 60).toString().padStart(2, "0")}
+                          <span style={{ fontSize: "12px", color: "var(--text-muted)", marginLeft: "4px", fontWeight: 500 }}>
+                            / {parts[currentPart].speakingTime}s
+                          </span>
+                        </div>
+
+                        {/* Warnings */}
+                        {recordingTime >= parts[currentPart].speakingTime - 5 && (
+                          <div style={{ 
+                            marginTop: "8px", 
+                            fontSize: "11px", 
+                            fontWeight: 700, 
+                            color: "#fda4af", 
+                            background: "rgba(244, 63, 94, 0.15)", 
+                            border: "1px solid rgba(244, 63, 94, 0.3)", 
+                            padding: "4px 10px", 
+                            borderRadius: "9999px",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "4px",
+                            boxShadow: "0 4px 12px rgba(244, 63, 94, 0.15)"
+                          }}>
+                            ⚠️ Auto-submit in {parts[currentPart].speakingTime - recordingTime}s
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Waveform Visualization */}
+                    {phase === "record" && isRecording && (
+                      <div className="waveform" style={{ justifyContent: "center", height: "24px", margin: "4px 0" }}>
+                        {[...Array(9)].map((_, i) => (
+                          <div key={i} className="waveform-bar" style={{ animationDelay: `${i * 0.1}s`, width: "3px", background: "var(--brand-rose)" }} />
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Control Buttons */}
+                    {phase === "record" && (
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
+                        {!isRecording ? (
+                          <button id="record-btn" onClick={startRecording} className="record-btn record-btn-idle" title="Start Recording" style={{ width: "56px", height: "56px", fontSize: "24px" }}>🎤</button>
+                        ) : (
+                          <button id="stop-record-btn" onClick={() => { stopRecording(); handleNextPart(); }} className="record-btn record-btn-recording" title="Stop Recording" style={{ width: "56px", height: "56px", fontSize: "24px" }}>⏹️</button>
+                        )}
+                        <span style={{ fontSize: "11px", color: "var(--text-muted)", fontWeight: 500 }}>
+                          {isRecording ? "Click to stop & submit" : "Click to start recording"}
+                        </span>
+                      </div>
+                    )}
+
+                  </div>
+                )}
+
+                {/* Auto-submitting overlay */}
+                {phase === "record" && isAutoSubmitting && (
+                  <div style={{ 
+                    position: "absolute", 
+                    inset: 0, 
+                    background: "rgba(10,14,39,0.95)", 
+                    backdropFilter: "blur(12px)", 
+                    display: "flex", 
+                    flexDirection: "column", 
+                    alignItems: "center", 
+                    justifyContent: "center", 
+                    gap: "12px", 
+                    zIndex: 10,
+                    animation: "fadeIn 0.2s ease"
+                  }}>
+                    <div style={{ fontSize: "36px", animation: "bounce 1s infinite" }}>⏰</div>
+                    <div style={{ fontSize: "20px", fontWeight: 900, color: "var(--brand-rose)", letterSpacing: "-0.02em" }}>Time's Up!</div>
+                    <div style={{ fontSize: "13px", color: "var(--text-secondary)" }}>Auto-submitting response...</div>
+                  </div>
+                )}
+
+              </div>
+
+              {/* Right Column / Content Details */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "20px", width: "100%" }}>
+                
+                {/* INTRO DETAILS */}
+                {phase === "intro" && qSet && (
+                  <div className="animate-fadeInUp" style={{ width: "100%" }}>
+                    <h1 style={{ fontSize: "36px", fontWeight: 900, marginBottom: "8px", textAlign: "center" }}>
+                      🎤 Speaking <span className="gradient-text">Assessment</span>
+                    </h1>
+                    <p className="text-secondary" style={{ marginBottom: "28px", textAlign: "center" }}>
+                      This assessment consists of 5 parts. You will be given preparation time before each part.
+                    </p>
+
+                    {!browserSupported && (
+                      <div className="alert alert-info" style={{ marginBottom: "24px" }}>
+                        🔔 Speech recognition may not be supported in your browser. You can type your response instead.
+                      </div>
+                    )}
+
+                    <div className="glass-card" style={{ padding: "32px", marginBottom: "24px" }}>
+                      <h3 style={{ fontSize: "18px", fontWeight: 800, marginBottom: "16px" }}>Assessment Structure:</h3>
+                      <ul style={{ paddingLeft: "20px", lineHeight: "1.8", color: "var(--text-secondary)" }}>
+                        <li><strong>Part 1:</strong> Introduction Topic</li>
+                        <li><strong>Part 2 &amp; 3:</strong> Follow-up Questions</li>
+                        <li><strong>Part 4:</strong> New Topic</li>
+                        <li><strong>Part 5:</strong> Reading Paragraph</li>
+                      </ul>
+                    </div>
+
+                    {/* ── Camera & Microphone Permission Setup Card ─────────────────── */}
+                    <div style={{ padding: "24px 28px", marginBottom: "24px", borderRadius: "16px", background: (cameraEnabled && micEnabled) ? "rgba(16,185,129,0.07)" : "rgba(76,127,237,0.07)", border: (cameraEnabled && micEnabled) ? "1px solid rgba(16,185,129,0.25)" : "1px solid rgba(76,127,237,0.25)" }}>
+                      <div style={{ display: "flex", alignItems: "flex-start", gap: "16px" }}>
+                        <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: (cameraEnabled && micEnabled) ? "rgba(16,185,129,0.15)" : "rgba(76,127,237,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "22px", flexShrink: 0 }}>
+                          {(cameraEnabled && micEnabled) ? "✅" : "📷"}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: 700, fontSize: "16px", marginBottom: "6px" }}>
+                            {(cameraEnabled && micEnabled) ? "Camera & Microphone Ready" : "Setup Camera & Microphone"}
+                          </div>
+                          <p className="text-secondary" style={{ fontSize: "13px", lineHeight: 1.6, marginBottom: "14px" }}>
+                            {(cameraEnabled && micEnabled)
+                              ? "Both devices are configured and active. Your live centered camera preview is shown above."
+                              : "This assessment requires access to your camera and microphone. We use AI-powered face tracking and audio translation to evaluate your answers and verify integrity. Please click below to grant permissions."}
+                          </p>
+                          {!(cameraEnabled && micEnabled) && (
+                            <button
+                              onClick={requestCameraAndMic}
+                              className="btn btn-primary btn-sm"
+                              style={{ fontSize: "13px", display: "flex", alignItems: "center", gap: "6px" }}
+                            >
+                              🎤 Allow Device Permissions
+                            </button>
+                          )}
+                          {(cameraEnabled && micEnabled) && (
+                            <div style={{ fontSize: "13px", color: "#10b981", fontWeight: 600, display: "flex", alignItems: "center", gap: "6px" }}>
+                              🟢 Ready to start the assessment.
+                            </div>
+                          )}
+                          {permissionsError && (
+                            <div style={{ color: "#f43f5e", fontSize: "13px", marginTop: "8px", fontWeight: 600 }}>
+                              ⚠️ {permissionsError}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* ── Integrity Notice ────────────────────────────────────────── */}
+                    <div style={{ padding: "14px 18px", marginBottom: "24px", borderRadius: "12px", background: "rgba(255,255,255,0.03)", border: "1px solid var(--border-subtle)", display: "flex", alignItems: "flex-start", gap: "12px" }}>
+                      <span style={{ fontSize: "18px", flexShrink: 0 }}>🛡️</span>
+                      <div style={{ fontSize: "13px", color: "var(--text-muted)", lineHeight: 1.6 }}>
+                        This assessment runs in <strong style={{ color: "var(--text-secondary)" }}>fullscreen mode</strong> with integrity monitoring enabled. Tab switches, copy/paste, right-click, and suspicious behaviour will be logged and reviewed by assessors.
+                      </div>
+                    </div>
+
+                    <button
+                      id="start-speaking-btn"
+                      onClick={startPreparation}
+                      className="btn btn-primary btn-lg"
+                      style={{ width: "100%", opacity: (cameraEnabled && micEnabled) ? 1 : 0.6, cursor: (cameraEnabled && micEnabled) ? "pointer" : "not-allowed" }}
+                      disabled={!(cameraEnabled && micEnabled)}
+                    >
+                      Start Assessment →
+                    </button>
+                    {!(cameraEnabled && micEnabled) && (
+                      <p style={{ fontSize: "12px", color: "var(--text-muted)", textAlign: "center", marginTop: "8px" }}>
+                        Please allow camera and microphone permissions above to enable starting the assessment.
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* PREPARATION & RECORDING PROMPT AREA */}
+                {(phase === "prepare" || phase === "record") && parts[currentPart] && (
+                  <>
+                    <div className="glass-card" style={{ padding: "28px", minHeight: "220px", display: "flex", flexDirection: "column", gap: "16px" }}>
+                      <h4 style={{ fontSize: "11px", color: "var(--text-muted)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", margin: 0 }}>
+                        Question / Prompt
+                      </h4>
+                      <div style={{ fontSize: "17px", lineHeight: "1.7", color: "var(--text-primary)", whiteSpace: "pre-wrap", flex: 1 }}>
+                        {parts[currentPart].prompt}
+                      </div>
+                    </div>
+
+                    {/* Live Transcription Box (Record phase only) */}
+                    {phase === "record" && currentTranscription && (
+                      <div className="glass-card animate-fadeIn" style={{ padding: "20px", minHeight: "100px", borderLeft: "3px solid var(--brand-primary)" }}>
+                        <div style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700, marginBottom: "8px" }}>
+                          Live Transcription
+                        </div>
+                        <p style={{ fontSize: "14px", color: "var(--text-secondary)", lineHeight: "1.6", margin: 0 }}>
+                          {currentTranscription}
+                        </p>
+                      </div>
+                    )}
+                  </>
+                )}
+
+            </div>
+          </div>
+        </>)}
 
           {error && (
             <div className="alert alert-error" style={{ marginTop: "24px" }}>⚠️ {error}</div>
