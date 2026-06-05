@@ -3,7 +3,6 @@ import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
-import Logo from "@/components/Logo";
 
 export default function Navbar() {
   const { data: session } = useSession();
@@ -25,10 +24,9 @@ export default function Navbar() {
     <nav className="navbar">
       <div className="container">
         <div className="navbar-inner">
-          <div className="navbar-logo" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <Logo size="md" />
-            <span>
-              <span className="gradient-text">IDmission</span> FluentVerify
+          <div className="navbar-logo" style={{ display: "flex", alignItems: "center" }}>
+            <span className="gradient-text" style={{ fontSize: "20px", fontWeight: 800, fontFamily: "Outfit, sans-serif" }}>
+              FluentVerify
             </span>
           </div>
 

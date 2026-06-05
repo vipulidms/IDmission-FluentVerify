@@ -3,7 +3,6 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Logo from "@/components/Logo";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -54,9 +53,8 @@ export default function LoginPage() {
       }}>
         {/* Logo */}
         <div style={{ textAlign: "center", marginBottom: "36px" }}>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: "12px", fontFamily: "Outfit, sans-serif", fontWeight: 800, fontSize: "22px" }}>
-            <Logo size="lg" />
-            <span><span className="gradient-text">IDmission</span> FluentVerify</span>
+          <div style={{ display: "inline-flex", alignItems: "center", fontFamily: "Outfit, sans-serif", fontWeight: 800, fontSize: "24px" }}>
+            <span className="gradient-text">FluentVerify</span>
           </div>
           <h1 style={{ fontSize: "28px", fontWeight: 800, marginTop: "24px", marginBottom: "8px" }}>Welcome back</h1>
           <p className="text-secondary" style={{ fontSize: "15px" }}>Sign in to your account to continue</p>
