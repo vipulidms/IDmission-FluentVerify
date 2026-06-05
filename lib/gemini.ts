@@ -61,6 +61,7 @@ export async function assessWriting(
   
   CEFR levels: A1 (0-20), A2 (21-35), B1 (36-55), B2 (56-75), C1 (76-90), C2 (91-100)
   Score should reflect genuine CEFR assessment. Be specific and constructive.
+  CRITICAL RULE: If the user's response is completely off-topic, random, or ignores the prompt entirely, you MUST assign the lowest possible scores (A1, 0-10) and explicitly mention that the response was irrelevant in the detailed feedback.
   CRITICAL: The JSON above is purely an example of the structure. DO NOT copy the scores (e.g., 65) or text from the example. You MUST evaluate the response strictly on its own merits and provide genuine scores and feedback.`;
 
   const result = await model.generateContent(systemPrompt);
@@ -226,6 +227,7 @@ export async function assessSpeaking(
   }
   
   Note: Evaluate holistically based on grammar in transcription, vocabulary range, and likely fluency across all 5 parts. Be constructive and specific.
+  CRITICAL RULE: Task Achievement is paramount. If the user's responses are completely off-topic, random nonsense, or ignore the provided prompts entirely, you MUST heavily penalize them, assign the lowest possible CEFR level (A1) and scores (0-10), and explicitly state that their answers were irrelevant to the questions.
   CRITICAL: The JSON above is purely an example of the structure. DO NOT copy the scores (e.g., 72) or text from the example. You MUST evaluate the response strictly on its own merits and provide genuine scores and feedback.`;
 
   const result = await model.generateContent(systemPrompt);
