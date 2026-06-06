@@ -533,26 +533,23 @@ function SpeakingContent() {
 
               <div className="speaking-grid">
               
-              {/* Left Column / Control Panel Card — hidden in intro (webcam embedded in right col) */}
+              {/* Left Column / Control Panel Card */}
               <div 
                 className={
-                  phase === "intro"
-                    ? ""
-                    : `glass-card p-6 flex flex-col items-center justify-between relative overflow-hidden ${
-                        phase === "record" && recordingTime >= parts[currentPart].speakingTime - 5 
-                          ? "animate-flash-border-rose" 
-                          : ""
-                      }`
+                  `glass-card p-6 flex flex-col items-center justify-between relative overflow-hidden ${
+                    phase === "record" && recordingTime >= parts[currentPart].speakingTime - 5 
+                      ? "animate-flash-border-rose" 
+                      : ""
+                  }`
                 } 
                 style={{ 
-                  display: phase === "intro" ? "none" : undefined,
                   width: "100%", 
-                  minHeight: phase === "intro" ? "auto" : "380px",
-                  padding: phase === "intro" ? "0" : "32px 24px"
+                  minHeight: "380px",
+                  padding: "32px 24px"
                 }}
               >
-                {/* Webcam Preview Widget — only shown in prepare/record phases (intro embeds its own preview) */}
-                {cameraEnabled && phase !== "intro" && (
+                {/* Webcam Preview Widget — single source of truth for videoRef/canvasRef */}
+                {cameraEnabled && (
                   <div style={{ 
                     display: "flex", 
                     flexDirection: "column", 
@@ -631,6 +628,60 @@ function SpeakingContent() {
                         ⚠️ {faceCount} faces detected
                       </div>
                     )}
+                  </div>
+                )}
+
+                {/* ── Intro-only: Permissions card inside left panel ── */}
+                {phase === "intro" && (
+                  <div style={{ width: "100%", marginTop: "16px" }}>
+                    <div style={{
+                      padding: "16px",
+                      borderRadius: "12px",
+                      background: (cameraEnabled && micEnabled) ? "rgba(16,185,129,0.08)" : "rgba(76,127,237,0.08)",
+                      border: (cameraEnabled && micEnabled) ? "1px solid rgba(16,185,129,0.3)" : "1px solid rgba(76,127,237,0.3)"
+                    }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
+                        <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: (cameraEnabled && micEnabled) ? "rgba(16,185,129,0.15)" : "rgba(76,127,237,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", flexShrink: 0 }}>
+                          {(cameraEnabled && micEnabled) ? "✅" : "📷"}
+                        </div>
+                        <div style={{ fontWeight: 700, fontSize: "13px" }}>
+                          {(cameraEnabled && micEnabled) ? "Camera & Mic Ready" : "Setup Camera & Microphone"}
+                        </div>
+                      </div>
+
+                      <p className="text-secondary" style={{ fontSize: "11px", lineHeight: 1.6, marginBottom: "10px" }}>
+                        {(cameraEnabled && micEnabled)
+                          ? "Both devices are active and ready."
+                          : "Camera and microphone required for face tracking and audio evaluation."}
+                      </p>
+
+                      {/* Status indicators */}
+                      <div style={{ display: "flex", flexDirection: "column", gap: "5px", marginBottom: cameraEnabled && micEnabled ? 0 : "10px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "7px", fontSize: "11px" }}>
+                          <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: cameraEnabled ? "#10b981" : "var(--text-muted)", display: "inline-block", flexShrink: 0 }} />
+                          <span style={{ color: cameraEnabled ? "#10b981" : "var(--text-secondary)" }}>Camera {cameraEnabled ? "active" : "not connected"}</span>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "7px", fontSize: "11px" }}>
+                          <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: micEnabled ? "#10b981" : "var(--text-muted)", display: "inline-block", flexShrink: 0 }} />
+                          <span style={{ color: micEnabled ? "#10b981" : "var(--text-secondary)" }}>Microphone {micEnabled ? "active" : "not connected"}</span>
+                        </div>
+                      </div>
+
+                      {!(cameraEnabled && micEnabled) && (
+                        <button
+                          onClick={requestCameraAndMic}
+                          className="btn btn-primary btn-sm"
+                          style={{ fontSize: "12px", display: "flex", alignItems: "center", gap: "6px", width: "100%", justifyContent: "center" }}
+                        >
+                          🎤 Allow Device Permissions
+                        </button>
+                      )}
+                      {permissionsError && (
+                        <div style={{ color: "#f43f5e", fontSize: "11px", marginTop: "8px", fontWeight: 600 }}>
+                          ⚠️ {permissionsError}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
 
@@ -747,13 +798,13 @@ function SpeakingContent() {
               </div>
 
               {/* Right Column / Content Details */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "20px", width: "100%", gridColumn: phase === "intro" ? "1 / -1" : undefined }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "20px", width: "100%" }}>
                 
                 {/* INTRO DETAILS */}
                 {phase === "intro" && qSet && (
                   <div className="animate-fadeInUp" style={{ width: "100%" }}>
                     {/* Compact header */}
-                    <div style={{ textAlign: "center", marginBottom: "24px" }}>
+                    <div style={{ textAlign: "center", marginBottom: "20px" }}>
                       <h1 style={{ fontSize: "28px", fontWeight: 900, marginBottom: "6px" }}>
                         🎤 Speaking <span className="gradient-text">Assessment</span>
                       </h1>
@@ -768,135 +819,52 @@ function SpeakingContent() {
                       </div>
                     )}
 
-                    {/* Two-column grid */}
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", alignItems: "start" }}>
-
-                      {/* LEFT: Structure + Integrity notice */}
-                      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                        <div className="glass-card" style={{ padding: "20px" }}>
-                          <h3 style={{ fontSize: "12px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)", marginBottom: "14px" }}>
-                            Assessment Structure
-                          </h3>
-                          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                            {[
-                              { icon: "💬", label: "Part 1", desc: "Introduction Topic", time: "60s" },
-                              { icon: "❓", label: "Part 2 & 3", desc: "Follow-up Questions", time: "45s each" },
-                              { icon: "🗣️", label: "Part 4", desc: "New Topic", time: "60s" },
-                              { icon: "📖", label: "Part 5", desc: "Reading Paragraph", time: "60s" },
-                            ].map((item) => (
-                              <div key={item.label} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "8px 10px", background: "rgba(255,255,255,0.03)", borderRadius: "8px", border: "1px solid var(--border-subtle)" }}>
-                                <span style={{ fontSize: "16px", flexShrink: 0 }}>{item.icon}</span>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                  <div style={{ fontSize: "12px", fontWeight: 700, color: "var(--text-primary)" }}>{item.label}: {item.desc}</div>
-                                </div>
-                                <span style={{ fontSize: "10px", fontWeight: 600, color: "var(--text-muted)", background: "rgba(255,255,255,0.05)", padding: "2px 7px", borderRadius: "9999px", flexShrink: 0 }}>{item.time}</span>
-                              </div>
-                            ))}
+                    {/* Assessment structure */}
+                    <div className="glass-card" style={{ padding: "20px", marginBottom: "12px" }}>
+                      <h3 style={{ fontSize: "12px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)", marginBottom: "14px" }}>
+                        Assessment Structure
+                      </h3>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                        {[
+                          { icon: "💬", label: "Part 1", desc: "Introduction Topic", time: "60s" },
+                          { icon: "❓", label: "Part 2 & 3", desc: "Follow-up Questions", time: "45s each" },
+                          { icon: "🗣️", label: "Part 4", desc: "New Topic", time: "60s" },
+                          { icon: "📖", label: "Part 5", desc: "Reading Paragraph", time: "60s" },
+                        ].map((item) => (
+                          <div key={item.label} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "8px 10px", background: "rgba(255,255,255,0.03)", borderRadius: "8px", border: "1px solid var(--border-subtle)" }}>
+                            <span style={{ fontSize: "16px", flexShrink: 0 }}>{item.icon}</span>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: "12px", fontWeight: 700, color: "var(--text-primary)" }}>{item.label}: {item.desc}</div>
+                            </div>
+                            <span style={{ fontSize: "10px", fontWeight: 600, color: "var(--text-muted)", background: "rgba(255,255,255,0.05)", padding: "2px 7px", borderRadius: "9999px", flexShrink: 0 }}>{item.time}</span>
                           </div>
-                        </div>
-
-                        {/* Integrity notice */}
-                        <div style={{ padding: "12px 14px", borderRadius: "10px", background: "rgba(255,255,255,0.03)", border: "1px solid var(--border-subtle)", display: "flex", alignItems: "flex-start", gap: "10px" }}>
-                          <span style={{ fontSize: "16px", flexShrink: 0 }}>🛡️</span>
-                          <div style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: 1.6 }}>
-                            Runs in <strong style={{ color: "var(--text-secondary)" }}>fullscreen</strong> with integrity monitoring. Tab switches, copy/paste, and suspicious behaviour will be logged.
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* RIGHT: Permissions + Start */}
-                      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                        {/* Camera preview if enabled */}
-                        {cameraEnabled && (
-                          <div style={{ display: "flex", justifyContent: "center" }}>
-                            <div style={{
-                              position: "relative",
-                              width: "100%",
-                              maxWidth: "200px",
-                              aspectRatio: "4/3",
-                              borderRadius: "12px",
-                              overflow: "hidden",
-                              border: `2px solid ${faceDisplay.color}`,
-                              background: "rgba(10,14,39,0.95)",
-                              transition: "border-color 0.3s ease"
-                            }}>
-                              <video ref={videoRef} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", transform: "scaleX(-1)" }} muted playsInline autoPlay />
-                              <canvas ref={canvasRef} width={200} height={150} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", transform: "scaleX(-1)", pointerEvents: "none" }} />
-                              {modelLoading && (
-                                <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px", color: "var(--text-muted)", flexDirection: "column", gap: "8px" }}>
-                                  <div className="spinner" style={{ width: "24px", height: "24px" }} />
-                                  <span>Loading AI...</span>
-                                </div>
-                              )}
-                              <div style={{ position: "absolute", top: "6px", left: "6px", width: "8px", height: "8px", borderRadius: "50%", background: faceDisplay.color, boxShadow: `0 0 6px ${faceDisplay.color}` }} />
-                              <div style={{ position: "absolute", bottom: "6px", left: "50%", transform: "translateX(-50%)", background: "rgba(10,14,39,0.85)", padding: "3px 8px", borderRadius: "10px", fontSize: "9px", fontWeight: 700, color: faceDisplay.color, display: "flex", alignItems: "center", gap: "3px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                                <span>{faceDisplay.icon}</span><span>{faceDisplay.label}</span>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Permissions card */}
-                        <div style={{ padding: "18px 20px", borderRadius: "12px", background: (cameraEnabled && micEnabled) ? "rgba(16,185,129,0.07)" : "rgba(76,127,237,0.07)", border: (cameraEnabled && micEnabled) ? "1px solid rgba(16,185,129,0.25)" : "1px solid rgba(76,127,237,0.25)" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "10px" }}>
-                            <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: (cameraEnabled && micEnabled) ? "rgba(16,185,129,0.15)" : "rgba(76,127,237,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", flexShrink: 0 }}>
-                              {(cameraEnabled && micEnabled) ? "✅" : "📷"}
-                            </div>
-                            <div style={{ fontWeight: 700, fontSize: "14px" }}>
-                              {(cameraEnabled && micEnabled) ? "Camera & Mic Ready" : "Setup Camera & Microphone"}
-                            </div>
-                          </div>
-                          <p className="text-secondary" style={{ fontSize: "12px", lineHeight: 1.6, marginBottom: "12px" }}>
-                            {(cameraEnabled && micEnabled)
-                              ? "Both devices are active. Your live camera preview is shown above."
-                              : "AI-powered face tracking and audio translation will evaluate your answers and verify integrity."}
-                          </p>
-
-                          {/* Status rows */}
-                          <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "12px" }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px" }}>
-                              <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: cameraEnabled ? "#10b981" : "var(--text-muted)", display: "inline-block", flexShrink: 0 }} />
-                              <span style={{ color: cameraEnabled ? "#10b981" : "var(--text-secondary)" }}>Camera {cameraEnabled ? "active" : "not connected"}</span>
-                            </div>
-                            <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px" }}>
-                              <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: micEnabled ? "#10b981" : "var(--text-muted)", display: "inline-block", flexShrink: 0 }} />
-                              <span style={{ color: micEnabled ? "#10b981" : "var(--text-secondary)" }}>Microphone {micEnabled ? "active" : "not connected"}</span>
-                            </div>
-                          </div>
-
-                          {!(cameraEnabled && micEnabled) && (
-                            <button
-                              onClick={requestCameraAndMic}
-                              className="btn btn-primary btn-sm"
-                              style={{ fontSize: "13px", display: "flex", alignItems: "center", gap: "6px", width: "100%", justifyContent: "center" }}
-                            >
-                              🎤 Allow Device Permissions
-                            </button>
-                          )}
-                          {permissionsError && (
-                            <div style={{ color: "#f43f5e", fontSize: "12px", marginTop: "8px", fontWeight: 600 }}>
-                              ⚠️ {permissionsError}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Start button */}
-                        <button
-                          id="start-speaking-btn"
-                          onClick={startPreparation}
-                          className="btn btn-primary"
-                          style={{ width: "100%", padding: "14px", fontSize: "15px", opacity: (cameraEnabled && micEnabled) ? 1 : 0.5, cursor: (cameraEnabled && micEnabled) ? "pointer" : "not-allowed" }}
-                          disabled={!(cameraEnabled && micEnabled)}
-                        >
-                          Start Assessment →
-                        </button>
-                        {!(cameraEnabled && micEnabled) && (
-                          <p style={{ fontSize: "11px", color: "var(--text-muted)", textAlign: "center", marginTop: "-4px" }}>
-                            Allow camera & microphone above to begin
-                          </p>
-                        )}
+                        ))}
                       </div>
                     </div>
+
+                    {/* Integrity notice */}
+                    <div style={{ padding: "12px 14px", borderRadius: "10px", background: "rgba(255,255,255,0.03)", border: "1px solid var(--border-subtle)", display: "flex", alignItems: "flex-start", gap: "10px", marginBottom: "16px" }}>
+                      <span style={{ fontSize: "16px", flexShrink: 0 }}>🛡️</span>
+                      <div style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: 1.6 }}>
+                        Runs in <strong style={{ color: "var(--text-secondary)" }}>fullscreen</strong> with integrity monitoring. Tab switches, copy/paste, and suspicious behaviour will be logged.
+                      </div>
+                    </div>
+
+                    {/* Start button */}
+                    <button
+                      id="start-speaking-btn"
+                      onClick={startPreparation}
+                      className="btn btn-primary"
+                      style={{ width: "100%", padding: "14px", fontSize: "15px", opacity: (cameraEnabled && micEnabled) ? 1 : 0.5, cursor: (cameraEnabled && micEnabled) ? "pointer" : "not-allowed" }}
+                      disabled={!(cameraEnabled && micEnabled)}
+                    >
+                      Start Assessment →
+                    </button>
+                    {!(cameraEnabled && micEnabled) && (
+                      <p style={{ fontSize: "11px", color: "var(--text-muted)", textAlign: "center", marginTop: "6px" }}>
+                        Allow camera & microphone in the left panel to begin
+                      </p>
+                    )}
                   </div>
                 )}
 
