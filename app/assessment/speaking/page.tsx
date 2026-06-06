@@ -151,10 +151,24 @@ function SpeakingContent() {
     recognition.onresult = (event: any) => {
       let interimTranscript = "";
       for (let i = event.resultIndex; i < event.results.length; i++) {
-        if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript + " ";
-        else interimTranscript += event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          let segment = event.results[i][0].transcript.trim();
+          if (segment) {
+            // Capitalize first letter of each final segment
+            segment = segment.charAt(0).toUpperCase() + segment.slice(1);
+            // Add period if segment doesn't end with sentence-ending punctuation
+            if (!/[.!?]$/.test(segment)) segment += ".";
+            finalTranscript += segment + " ";
+          }
+        } else {
+          interimTranscript += event.results[i][0].transcript;
+        }
       }
-      setCurrentTranscription(finalTranscript + interimTranscript);
+      // Show finalised + in-progress text; capitalise start of interim too
+      const interim = interimTranscript
+        ? interimTranscript.charAt(0).toUpperCase() + interimTranscript.slice(1)
+        : "";
+      setCurrentTranscription(finalTranscript + interim);
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -372,8 +386,8 @@ function SpeakingContent() {
 
       {/* Webcam is centered dynamically above the content card */}
 
-      <div className="container" style={{ paddingBottom: "80px" }}>
-        <div className="breadcrumb" style={{ paddingTop: "32px" }}>
+      <div className="container" style={{ paddingBottom: "40px" }}>
+        <div className="breadcrumb" style={{ paddingTop: "20px" }}>
           <Link href="/assessment">Assessment</Link>
           <span className="breadcrumb-sep">›</span>
           <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
@@ -381,7 +395,7 @@ function SpeakingContent() {
           </span>
         </div>
 
-        <div style={{ maxWidth: (phase === "prepare" || phase === "record") ? "1000px" : "720px", margin: "0 auto", transition: "max-width 0.3s ease" }}>
+        <div style={{ maxWidth: (phase === "prepare" || phase === "record") ? "1000px" : "900px", margin: "0 auto", transition: "max-width 0.3s ease" }}>
 
           {/* ── Loading Phase ─────────────────────────────────────────────────── */}
           {phase === "loading" && (
@@ -424,14 +438,14 @@ function SpeakingContent() {
                     zIndex: 1,
                     width: "100%"
                   }}>
-                    {/* Track Line behind circles */}
+                    {/* Track Line — spans from center of step-1 to center of step-5 only */}
                     <div style={{
                       position: "absolute",
                       top: "14px",
-                      left: "10%",
-                      right: "10%",
+                      left: `calc(${100 / (parts.length * 2)}% - 1px)`,
+                      right: `calc(${100 / (parts.length * 2)}% - 1px)`,
                       height: "3px",
-                      background: "rgba(255, 255, 255, 0.07)",
+                      background: "rgba(255, 255, 255, 0.08)",
                       borderRadius: "2px",
                       zIndex: 0
                     }} />
@@ -440,13 +454,15 @@ function SpeakingContent() {
                     <div style={{
                       position: "absolute",
                       top: "14px",
-                      left: "10%",
-                      width: `${currentPart * 20}%`,
+                      left: `calc(${100 / (parts.length * 2)}% - 1px)`,
+                      width: currentPart === 0
+                        ? "0px"
+                        : `calc(${(currentPart / (parts.length - 1)) * (100 - 100 / parts.length)}% )`,
                       height: "3px",
                       background: "linear-gradient(90deg, #10b981, #4c7fed)",
                       borderRadius: "2px",
                       zIndex: 0,
-                      transition: "width 0.4s ease"
+                      transition: "width 0.5s ease"
                     }} />
                     {parts.map((p, idx) => {
                       const isCompleted = idx < currentPart;
@@ -515,13 +531,13 @@ function SpeakingContent() {
                 </div>
               )}
 
-              <div className={phase === "intro" ? "flex flex-col items-center" : "speaking-grid"}>
+              <div className="speaking-grid">
               
-              {/* Left Column / Control Panel Card */}
+              {/* Left Column / Control Panel Card — hidden in intro (webcam embedded in right col) */}
               <div 
                 className={
-                  phase === "intro" 
-                    ? "flex flex-col items-center" 
+                  phase === "intro"
+                    ? ""
                     : `glass-card p-6 flex flex-col items-center justify-between relative overflow-hidden ${
                         phase === "record" && recordingTime >= parts[currentPart].speakingTime - 5 
                           ? "animate-flash-border-rose" 
@@ -529,15 +545,14 @@ function SpeakingContent() {
                       }`
                 } 
                 style={{ 
+                  display: phase === "intro" ? "none" : undefined,
                   width: "100%", 
-                  maxWidth: phase === "intro" ? "240px" : "100%",
                   minHeight: phase === "intro" ? "auto" : "380px",
-                  marginBottom: phase === "intro" ? "24px" : "0",
                   padding: phase === "intro" ? "0" : "32px 24px"
                 }}
               >
-                {/* Webcam Preview Widget */}
-                {cameraEnabled && (
+                {/* Webcam Preview Widget — only shown in prepare/record phases (intro embeds its own preview) */}
+                {cameraEnabled && phase !== "intro" && (
                   <div style={{ 
                     display: "flex", 
                     flexDirection: "column", 
@@ -732,94 +747,156 @@ function SpeakingContent() {
               </div>
 
               {/* Right Column / Content Details */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "20px", width: "100%" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "20px", width: "100%", gridColumn: phase === "intro" ? "1 / -1" : undefined }}>
                 
                 {/* INTRO DETAILS */}
                 {phase === "intro" && qSet && (
                   <div className="animate-fadeInUp" style={{ width: "100%" }}>
-                    <h1 style={{ fontSize: "36px", fontWeight: 900, marginBottom: "8px", textAlign: "center" }}>
-                      🎤 Speaking <span className="gradient-text">Assessment</span>
-                    </h1>
-                    <p className="text-secondary" style={{ marginBottom: "28px", textAlign: "center" }}>
-                      This assessment consists of 5 parts. You will be given preparation time before each part.
-                    </p>
+                    {/* Compact header */}
+                    <div style={{ textAlign: "center", marginBottom: "24px" }}>
+                      <h1 style={{ fontSize: "28px", fontWeight: 900, marginBottom: "6px" }}>
+                        🎤 Speaking <span className="gradient-text">Assessment</span>
+                      </h1>
+                      <p className="text-secondary" style={{ fontSize: "13px" }}>
+                        5 parts · Preparation time given before each part
+                      </p>
+                    </div>
 
                     {!browserSupported && (
-                      <div className="alert alert-info" style={{ marginBottom: "24px" }}>
+                      <div className="alert alert-info" style={{ marginBottom: "16px", fontSize: "13px" }}>
                         🔔 Speech recognition may not be supported in your browser. You can type your response instead.
                       </div>
                     )}
 
-                    <div className="glass-card" style={{ padding: "32px", marginBottom: "24px" }}>
-                      <h3 style={{ fontSize: "18px", fontWeight: 800, marginBottom: "16px" }}>Assessment Structure:</h3>
-                      <ul style={{ paddingLeft: "20px", lineHeight: "1.8", color: "var(--text-secondary)" }}>
-                        <li><strong>Part 1:</strong> Introduction Topic</li>
-                        <li><strong>Part 2 &amp; 3:</strong> Follow-up Questions</li>
-                        <li><strong>Part 4:</strong> New Topic</li>
-                        <li><strong>Part 5:</strong> Reading Paragraph</li>
-                      </ul>
-                    </div>
+                    {/* Two-column grid */}
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", alignItems: "start" }}>
 
-                    {/* ── Camera & Microphone Permission Setup Card ─────────────────── */}
-                    <div style={{ padding: "24px 28px", marginBottom: "24px", borderRadius: "16px", background: (cameraEnabled && micEnabled) ? "rgba(16,185,129,0.07)" : "rgba(76,127,237,0.07)", border: (cameraEnabled && micEnabled) ? "1px solid rgba(16,185,129,0.25)" : "1px solid rgba(76,127,237,0.25)" }}>
-                      <div style={{ display: "flex", alignItems: "flex-start", gap: "16px" }}>
-                        <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: (cameraEnabled && micEnabled) ? "rgba(16,185,129,0.15)" : "rgba(76,127,237,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "22px", flexShrink: 0 }}>
-                          {(cameraEnabled && micEnabled) ? "✅" : "📷"}
-                        </div>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontWeight: 700, fontSize: "16px", marginBottom: "6px" }}>
-                            {(cameraEnabled && micEnabled) ? "Camera & Microphone Ready" : "Setup Camera & Microphone"}
+                      {/* LEFT: Structure + Integrity notice */}
+                      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                        <div className="glass-card" style={{ padding: "20px" }}>
+                          <h3 style={{ fontSize: "12px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)", marginBottom: "14px" }}>
+                            Assessment Structure
+                          </h3>
+                          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                            {[
+                              { icon: "💬", label: "Part 1", desc: "Introduction Topic", time: "60s" },
+                              { icon: "❓", label: "Part 2 & 3", desc: "Follow-up Questions", time: "45s each" },
+                              { icon: "🗣️", label: "Part 4", desc: "New Topic", time: "60s" },
+                              { icon: "📖", label: "Part 5", desc: "Reading Paragraph", time: "60s" },
+                            ].map((item) => (
+                              <div key={item.label} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "8px 10px", background: "rgba(255,255,255,0.03)", borderRadius: "8px", border: "1px solid var(--border-subtle)" }}>
+                                <span style={{ fontSize: "16px", flexShrink: 0 }}>{item.icon}</span>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ fontSize: "12px", fontWeight: 700, color: "var(--text-primary)" }}>{item.label}: {item.desc}</div>
+                                </div>
+                                <span style={{ fontSize: "10px", fontWeight: 600, color: "var(--text-muted)", background: "rgba(255,255,255,0.05)", padding: "2px 7px", borderRadius: "9999px", flexShrink: 0 }}>{item.time}</span>
+                              </div>
+                            ))}
                           </div>
-                          <p className="text-secondary" style={{ fontSize: "13px", lineHeight: 1.6, marginBottom: "14px" }}>
+                        </div>
+
+                        {/* Integrity notice */}
+                        <div style={{ padding: "12px 14px", borderRadius: "10px", background: "rgba(255,255,255,0.03)", border: "1px solid var(--border-subtle)", display: "flex", alignItems: "flex-start", gap: "10px" }}>
+                          <span style={{ fontSize: "16px", flexShrink: 0 }}>🛡️</span>
+                          <div style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: 1.6 }}>
+                            Runs in <strong style={{ color: "var(--text-secondary)" }}>fullscreen</strong> with integrity monitoring. Tab switches, copy/paste, and suspicious behaviour will be logged.
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* RIGHT: Permissions + Start */}
+                      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                        {/* Camera preview if enabled */}
+                        {cameraEnabled && (
+                          <div style={{ display: "flex", justifyContent: "center" }}>
+                            <div style={{
+                              position: "relative",
+                              width: "100%",
+                              maxWidth: "200px",
+                              aspectRatio: "4/3",
+                              borderRadius: "12px",
+                              overflow: "hidden",
+                              border: `2px solid ${faceDisplay.color}`,
+                              background: "rgba(10,14,39,0.95)",
+                              transition: "border-color 0.3s ease"
+                            }}>
+                              <video ref={videoRef} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", transform: "scaleX(-1)" }} muted playsInline autoPlay />
+                              <canvas ref={canvasRef} width={200} height={150} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", transform: "scaleX(-1)", pointerEvents: "none" }} />
+                              {modelLoading && (
+                                <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px", color: "var(--text-muted)", flexDirection: "column", gap: "8px" }}>
+                                  <div className="spinner" style={{ width: "24px", height: "24px" }} />
+                                  <span>Loading AI...</span>
+                                </div>
+                              )}
+                              <div style={{ position: "absolute", top: "6px", left: "6px", width: "8px", height: "8px", borderRadius: "50%", background: faceDisplay.color, boxShadow: `0 0 6px ${faceDisplay.color}` }} />
+                              <div style={{ position: "absolute", bottom: "6px", left: "50%", transform: "translateX(-50%)", background: "rgba(10,14,39,0.85)", padding: "3px 8px", borderRadius: "10px", fontSize: "9px", fontWeight: 700, color: faceDisplay.color, display: "flex", alignItems: "center", gap: "3px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                                <span>{faceDisplay.icon}</span><span>{faceDisplay.label}</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Permissions card */}
+                        <div style={{ padding: "18px 20px", borderRadius: "12px", background: (cameraEnabled && micEnabled) ? "rgba(16,185,129,0.07)" : "rgba(76,127,237,0.07)", border: (cameraEnabled && micEnabled) ? "1px solid rgba(16,185,129,0.25)" : "1px solid rgba(76,127,237,0.25)" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "10px" }}>
+                            <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: (cameraEnabled && micEnabled) ? "rgba(16,185,129,0.15)" : "rgba(76,127,237,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", flexShrink: 0 }}>
+                              {(cameraEnabled && micEnabled) ? "✅" : "📷"}
+                            </div>
+                            <div style={{ fontWeight: 700, fontSize: "14px" }}>
+                              {(cameraEnabled && micEnabled) ? "Camera & Mic Ready" : "Setup Camera & Microphone"}
+                            </div>
+                          </div>
+                          <p className="text-secondary" style={{ fontSize: "12px", lineHeight: 1.6, marginBottom: "12px" }}>
                             {(cameraEnabled && micEnabled)
-                              ? "Both devices are configured and active. Your live centered camera preview is shown above."
-                              : "This assessment requires access to your camera and microphone. We use AI-powered face tracking and audio translation to evaluate your answers and verify integrity. Please click below to grant permissions."}
+                              ? "Both devices are active. Your live camera preview is shown above."
+                              : "AI-powered face tracking and audio translation will evaluate your answers and verify integrity."}
                           </p>
+
+                          {/* Status rows */}
+                          <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "12px" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px" }}>
+                              <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: cameraEnabled ? "#10b981" : "var(--text-muted)", display: "inline-block", flexShrink: 0 }} />
+                              <span style={{ color: cameraEnabled ? "#10b981" : "var(--text-secondary)" }}>Camera {cameraEnabled ? "active" : "not connected"}</span>
+                            </div>
+                            <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px" }}>
+                              <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: micEnabled ? "#10b981" : "var(--text-muted)", display: "inline-block", flexShrink: 0 }} />
+                              <span style={{ color: micEnabled ? "#10b981" : "var(--text-secondary)" }}>Microphone {micEnabled ? "active" : "not connected"}</span>
+                            </div>
+                          </div>
+
                           {!(cameraEnabled && micEnabled) && (
                             <button
                               onClick={requestCameraAndMic}
                               className="btn btn-primary btn-sm"
-                              style={{ fontSize: "13px", display: "flex", alignItems: "center", gap: "6px" }}
+                              style={{ fontSize: "13px", display: "flex", alignItems: "center", gap: "6px", width: "100%", justifyContent: "center" }}
                             >
                               🎤 Allow Device Permissions
                             </button>
                           )}
-                          {(cameraEnabled && micEnabled) && (
-                            <div style={{ fontSize: "13px", color: "#10b981", fontWeight: 600, display: "flex", alignItems: "center", gap: "6px" }}>
-                              🟢 Ready to start the assessment.
-                            </div>
-                          )}
                           {permissionsError && (
-                            <div style={{ color: "#f43f5e", fontSize: "13px", marginTop: "8px", fontWeight: 600 }}>
+                            <div style={{ color: "#f43f5e", fontSize: "12px", marginTop: "8px", fontWeight: 600 }}>
                               ⚠️ {permissionsError}
                             </div>
                           )}
                         </div>
+
+                        {/* Start button */}
+                        <button
+                          id="start-speaking-btn"
+                          onClick={startPreparation}
+                          className="btn btn-primary"
+                          style={{ width: "100%", padding: "14px", fontSize: "15px", opacity: (cameraEnabled && micEnabled) ? 1 : 0.5, cursor: (cameraEnabled && micEnabled) ? "pointer" : "not-allowed" }}
+                          disabled={!(cameraEnabled && micEnabled)}
+                        >
+                          Start Assessment →
+                        </button>
+                        {!(cameraEnabled && micEnabled) && (
+                          <p style={{ fontSize: "11px", color: "var(--text-muted)", textAlign: "center", marginTop: "-4px" }}>
+                            Allow camera & microphone above to begin
+                          </p>
+                        )}
                       </div>
                     </div>
-
-                    {/* ── Integrity Notice ────────────────────────────────────────── */}
-                    <div style={{ padding: "14px 18px", marginBottom: "24px", borderRadius: "12px", background: "rgba(255,255,255,0.03)", border: "1px solid var(--border-subtle)", display: "flex", alignItems: "flex-start", gap: "12px" }}>
-                      <span style={{ fontSize: "18px", flexShrink: 0 }}>🛡️</span>
-                      <div style={{ fontSize: "13px", color: "var(--text-muted)", lineHeight: 1.6 }}>
-                        This assessment runs in <strong style={{ color: "var(--text-secondary)" }}>fullscreen mode</strong> with integrity monitoring enabled. Tab switches, copy/paste, right-click, and suspicious behaviour will be logged and reviewed by assessors.
-                      </div>
-                    </div>
-
-                    <button
-                      id="start-speaking-btn"
-                      onClick={startPreparation}
-                      className="btn btn-primary btn-lg"
-                      style={{ width: "100%", opacity: (cameraEnabled && micEnabled) ? 1 : 0.6, cursor: (cameraEnabled && micEnabled) ? "pointer" : "not-allowed" }}
-                      disabled={!(cameraEnabled && micEnabled)}
-                    >
-                      Start Assessment →
-                    </button>
-                    {!(cameraEnabled && micEnabled) && (
-                      <p style={{ fontSize: "12px", color: "var(--text-muted)", textAlign: "center", marginTop: "8px" }}>
-                        Please allow camera and microphone permissions above to enable starting the assessment.
-                      </p>
-                    )}
                   </div>
                 )}
 

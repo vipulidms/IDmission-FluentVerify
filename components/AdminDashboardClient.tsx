@@ -216,7 +216,7 @@ export default function AdminDashboardClient({ users }: Props) {
                   {/* Expanded Attempts View */}
                   {expandedUser === user.id && user.assessments.length > 0 && (
                     <tr style={{ background: "rgba(0,0,0,0.2)" }}>
-                      <td colSpan={6} style={{ padding: "0" }}>
+                      <td colSpan={7} style={{ padding: "0" }}>
                         <div style={{ padding: "24px 40px", borderBottom: "1px solid var(--border-subtle)" }}>
                           <h4 style={{ fontSize: "14px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-secondary)", marginBottom: "16px" }}>
                             Assessment History for {user.name}

@@ -53,11 +53,11 @@ export default function LoginPage() {
       }}>
         {/* Logo */}
         <div style={{ textAlign: "center", marginBottom: "36px" }}>
-          <div style={{ display: "inline-flex", alignItems: "center", fontFamily: "Outfit, sans-serif", fontWeight: 800, fontSize: "24px" }}>
+          <div style={{ display: "inline-flex", alignItems: "center", fontFamily: "Outfit, sans-serif", fontWeight: 800, fontSize: "20px", letterSpacing: "0.02em" }}>
             <span className="gradient-text">FluentVerify</span>
           </div>
-          <h1 style={{ fontSize: "28px", fontWeight: 800, marginTop: "24px", marginBottom: "8px" }}>Welcome back</h1>
-          <p className="text-secondary" style={{ fontSize: "15px" }}>Sign in to your account to continue</p>
+          <h1 style={{ fontSize: "32px", fontWeight: 800, marginTop: "20px", marginBottom: "10px", letterSpacing: "-0.02em", lineHeight: 1.2 }}>Welcome back</h1>
+          <p className="text-secondary" style={{ fontSize: "14px", lineHeight: 1.6 }}>Sign in to your account to continue</p>
         </div>
 
         {error && (
@@ -100,7 +100,7 @@ export default function LoginPage() {
             type="submit"
             className="btn btn-primary"
             disabled={loading}
-            style={{ width: "100%", padding: "16px", fontSize: "16px", marginTop: "4px" }}
+            style={{ width: "100%", padding: "14px", fontSize: "15px", marginTop: "4px", letterSpacing: "0.02em" }}
           >
             {loading ? (
               <>
@@ -114,7 +114,7 @@ export default function LoginPage() {
         </form>
 
         <div style={{ textAlign: "center", marginTop: "28px" }}>
-          <p className="text-secondary" style={{ fontSize: "14px" }}>
+          <p className="text-secondary" style={{ fontSize: "13px" }}>
             Don&apos;t have an account?{" "}
             <Link href="/auth/register" style={{ color: "var(--text-brand)", fontWeight: 600 }}>
               Create one free
