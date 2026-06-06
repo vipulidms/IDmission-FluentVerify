@@ -568,7 +568,15 @@ function SpeakingContent() {
                     }}>
                       <video
                         ref={videoRef}
-                        style={{ width: "200px", height: "150px", objectFit: "cover", display: "block", transform: "scaleX(-1)" }}
+                        style={{ 
+                          width: "200px", 
+                          height: "150px", 
+                          objectFit: "cover", 
+                          display: "block", 
+                          transform: "scaleX(-1)",
+                          filter: phase === "prepare" ? "brightness(0.3) grayscale(0.5)" : "none",
+                          transition: "filter 0.5s ease"
+                        }}
                         muted
                         playsInline
                         autoPlay
@@ -700,14 +708,7 @@ function SpeakingContent() {
                     </div>
 
                     {/* Timer Widget */}
-                    {phase === "prepare" ? (
-                      <div style={{ textAlign: "center" }}>
-                        <p style={{ margin: "0 0 4px 0", fontSize: "12px", color: "var(--text-secondary)" }}>Recording starts in</p>
-                        <div style={{ fontSize: "40px", fontWeight: 900, fontFamily: "Outfit, sans-serif", background: "var(--gradient-brand)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", lineHeight: 1.1 }}>
-                          {prepCountdown}s
-                        </div>
-                      </div>
-                    ) : (
+                    {phase === "record" && (
                       <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center" }}>
                         <div 
                           className={recordingTime >= parts[currentPart].speakingTime - 5 ? "animate-pulse-timer" : ""} 
@@ -871,11 +872,49 @@ function SpeakingContent() {
                 {/* PREPARATION & RECORDING PROMPT AREA */}
                 {(phase === "prepare" || phase === "record") && parts[currentPart] && (
                   <>
-                    <div className="glass-card" style={{ padding: "28px", minHeight: "220px", display: "flex", flexDirection: "column", gap: "16px" }}>
+                    {phase === "prepare" && (
+                      <div className="animate-fadeIn" style={{ 
+                        background: "rgba(76, 127, 237, 0.12)", 
+                        border: "2px solid rgba(76, 127, 237, 0.4)", 
+                        borderRadius: "12px", 
+                        padding: "20px", 
+                        marginBottom: "16px", 
+                        display: "flex", 
+                        alignItems: "center", 
+                        gap: "16px",
+                        boxShadow: "0 0 20px rgba(76, 127, 237, 0.15)"
+                      }}>
+                        <div style={{ fontSize: "36px", animation: "pulse 2s infinite" }}>⏳</div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: "18px", fontWeight: 900, color: "var(--brand-primary)", marginBottom: "4px", letterSpacing: "0.02em" }}>
+                            PREPARATION TIME — DO NOT SPEAK YET
+                          </div>
+                          <div style={{ fontSize: "13px", color: "var(--text-secondary)", lineHeight: 1.5 }}>
+                            Read the question carefully and mentally prepare your answer. The microphone is currently <strong>OFF</strong>. You will be notified when recording begins.
+                          </div>
+                        </div>
+                        
+                        {/* Countdown Timer built into the banner */}
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", background: "rgba(76, 127, 237, 0.1)", padding: "12px 20px", borderRadius: "8px", border: "1px solid rgba(76, 127, 237, 0.2)" }}>
+                          <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--brand-primary)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "4px" }}>Starts In</span>
+                          <span style={{ fontSize: "36px", fontWeight: 900, fontFamily: "Outfit, sans-serif", color: "var(--brand-primary)", lineHeight: 1 }}>{prepCountdown}s</span>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="glass-card" style={{ padding: "28px", minHeight: "220px", display: "flex", flexDirection: "column", gap: "16px", transition: "all 0.3s ease" }}>
                       <h4 style={{ fontSize: "11px", color: "var(--text-muted)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", margin: 0 }}>
                         Question / Prompt
                       </h4>
-                      <div style={{ fontSize: "17px", lineHeight: "1.7", color: "var(--text-primary)", whiteSpace: "pre-wrap", flex: 1 }}>
+                      <div style={{ 
+                        fontSize: phase === "prepare" ? "22px" : "17px", 
+                        fontWeight: phase === "prepare" ? 600 : 400,
+                        lineHeight: phase === "prepare" ? "1.5" : "1.7", 
+                        color: phase === "prepare" ? "#ffffff" : "var(--text-primary)", 
+                        whiteSpace: "pre-wrap", 
+                        flex: 1,
+                        transition: "all 0.3s ease"
+                      }}>
                         {parts[currentPart].prompt}
                       </div>
                     </div>
