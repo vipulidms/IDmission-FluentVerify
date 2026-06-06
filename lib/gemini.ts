@@ -16,6 +16,7 @@ export interface AssessmentResult {
   strengths: string[];
   improvements: string[];
   detailed_feedback: string;
+  target_level_gap?: string;
 }
 
 const CEFR_LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"];
@@ -34,7 +35,7 @@ export async function assessWriting(
 ): Promise<AssessmentResult> {
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-  const targetInstruction = targetCefrLevel ? `\nCRITICAL: The user's target CEFR level is ${targetCefrLevel}. You MUST evaluate their response strictly against the requirements of ${targetCefrLevel}. Your feedback should explicitly state if they meet this target level or fall short, but you must still provide an accurate overall CEFR level assessment based on their actual performance.` : "";
+  const targetInstruction = targetCefrLevel ? `\nCRITICAL: The user's target CEFR level is ${targetCefrLevel}. You MUST evaluate their response against the requirements of ${targetCefrLevel}. Provide a specific gap analysis in the 'target_level_gap' field comparing their actual performance to their ${targetCefrLevel} target. Do NOT mix this into the detailed_feedback.` : `\nInclude a "target_level_gap" field with a value of null or empty string since no target was set.`;
 
   const systemPrompt = `You are an expert ${language} language assessor certified in CEFR (Common European Framework of Reference for Languages). ${targetInstruction}
   
@@ -56,7 +57,8 @@ export async function assessWriting(
     },
     "strengths": ["strength 1", "strength 2", "strength 3"],
     "improvements": ["improvement 1", "improvement 2", "improvement 3"],
-    "detailed_feedback": "Detailed paragraph of feedback here..."
+    "detailed_feedback": "Detailed paragraph of feedback here...",
+    "target_level_gap": "Your target is B2, but your current performance is B1. To reach B2, you need to..."
   }
   
   CEFR levels: A1 (0-20), A2 (21-35), B1 (36-55), B2 (56-75), C1 (76-90), C2 (91-100)
@@ -81,6 +83,7 @@ export async function assessWriting(
       strengths: ["Shows understanding of the topic", "Attempts to address the prompt"],
       improvements: ["Work on grammar accuracy", "Expand vocabulary range", "Improve text organization"],
       detailed_feedback: "Your response shows basic understanding of the topic. Continue practicing to improve your language skills.",
+      target_level_gap: "Focus on producing more complex sentences to reach your target level.",
     };
   }
 }
@@ -93,7 +96,7 @@ export async function assessReading(
 ): Promise<AssessmentResult> {
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-  const targetInstruction = targetCefrLevel ? `\nCRITICAL: The user's target CEFR level is ${targetCefrLevel}. You MUST evaluate their reading comprehension strictly against the requirements of ${targetCefrLevel}. Your feedback should explicitly state if they meet this target level or fall short, but still provide an accurate overall CEFR level score.` : "";
+  const targetInstruction = targetCefrLevel ? `\nCRITICAL: The user's target CEFR level is ${targetCefrLevel}. You MUST evaluate their reading comprehension against the requirements of ${targetCefrLevel}. Provide a specific gap analysis in the 'target_level_gap' field comparing their actual performance to their ${targetCefrLevel} target. Do NOT mix this into the detailed_feedback.` : `\nInclude a "target_level_gap" field with a value of null since no target was set.`;
 
   const qAndA = questions
     .map((q, i) => `Q${i + 1}: ${q.question}\nUser Answer: ${q.userAnswer}${q.correctAnswer ? `\nExpected: ${q.correctAnswer}` : ""}`)
@@ -117,7 +120,8 @@ export async function assessReading(
     },
     "strengths": ["strength 1", "strength 2"],
     "improvements": ["improvement 1", "improvement 2"],
-    "detailed_feedback": "Detailed feedback paragraph..."
+    "detailed_feedback": "Detailed feedback paragraph...",
+    "target_level_gap": "Your target is B2, but your current reading comprehension aligns closer to B1. To reach B2, focus on..."
   }
   CRITICAL: The JSON above is purely an example of the structure. DO NOT copy the scores (e.g., 72) or text from the example. You MUST evaluate the response strictly on its own merits and provide genuine scores and feedback.`;
 
@@ -134,6 +138,7 @@ export async function assessReading(
       strengths: ["Shows basic reading comprehension", "Attempts all questions"],
       improvements: ["Read more carefully for details", "Practice inference skills"],
       detailed_feedback: "Your reading comprehension shows basic understanding. Focus on reading for specific details and implied meaning.",
+      target_level_gap: "To reach your target, practice reading longer and more complex texts.",
     };
   }
 }
@@ -146,7 +151,7 @@ export async function assessListening(
 ): Promise<AssessmentResult> {
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-  const targetInstruction = targetCefrLevel ? `\nCRITICAL: The user's target CEFR level is ${targetCefrLevel}. You MUST evaluate their listening comprehension strictly against the requirements of ${targetCefrLevel}. Your feedback should explicitly state if they meet this target level or fall short, but still provide an accurate overall CEFR level score.` : "";
+  const targetInstruction = targetCefrLevel ? `\nCRITICAL: The user's target CEFR level is ${targetCefrLevel}. You MUST evaluate their listening comprehension against the requirements of ${targetCefrLevel}. Provide a specific gap analysis in the 'target_level_gap' field comparing their actual performance to their ${targetCefrLevel} target. Do NOT mix this into the detailed_feedback.` : `\nInclude a "target_level_gap" field with a value of null since no target was set.`;
 
   const qAndA = questions
     .map((q, i) => `Q${i + 1}: ${q.question}\nUser Answer: ${q.userAnswer}${q.correctAnswer ? `\nExpected: ${q.correctAnswer}` : ""}`)
@@ -170,7 +175,8 @@ export async function assessListening(
     },
     "strengths": ["strength 1", "strength 2"],
     "improvements": ["improvement 1", "improvement 2"],
-    "detailed_feedback": "Detailed feedback paragraph..."
+    "detailed_feedback": "Detailed feedback paragraph...",
+    "target_level_gap": "Your target is B2, but your current listening comprehension aligns closer to B1. To reach B2, practice listening to..."
   }
   CRITICAL: The JSON above is purely an example of the structure. DO NOT copy the scores (e.g., 65) or text from the example. You MUST evaluate the response strictly on its own merits and provide genuine scores and feedback.`;
 
@@ -187,6 +193,7 @@ export async function assessListening(
       strengths: ["Shows listening comprehension", "Attempts all questions"],
       improvements: ["Practice active listening", "Focus on key information"],
       detailed_feedback: "Your listening comprehension shows you can understand general topics. Keep practicing to catch specific details.",
+      target_level_gap: "To reach your target, practice listening to native speakers at natural speed.",
     };
   }
 }
@@ -198,7 +205,7 @@ export async function assessSpeaking(
 ): Promise<AssessmentResult> {
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-  const targetInstruction = targetCefrLevel ? `\nCRITICAL: The user's target CEFR level is ${targetCefrLevel}. You MUST evaluate their spoken responses strictly against the requirements of ${targetCefrLevel}. Your feedback should explicitly state if they meet this target level or fall short, but still provide an accurate overall CEFR level assessment based on their actual performance.` : "";
+  const targetInstruction = targetCefrLevel ? `\nCRITICAL: The user's target CEFR level is ${targetCefrLevel}. You MUST evaluate their spoken responses against the requirements of ${targetCefrLevel}. Provide a specific gap analysis in the 'target_level_gap' field comparing their actual performance to their ${targetCefrLevel} target. Do NOT mix this into the detailed_feedback.` : `\nInclude a "target_level_gap" field with a value of null since no target was set.`;
 
   const qAndA = responses
     .map((r) => `[${r.phase}] Prompt: "${r.prompt}"\nUser Response: "${r.transcription}"`)
@@ -223,7 +230,8 @@ export async function assessSpeaking(
     },
     "strengths": ["strength 1", "strength 2", "strength 3"],
     "improvements": ["improvement 1", "improvement 2", "improvement 3"],
-    "detailed_feedback": "Detailed speaking feedback paragraph addressing the whole assessment..."
+    "detailed_feedback": "Detailed speaking feedback paragraph addressing the whole assessment...",
+    "target_level_gap": "Your target is B2, but your current performance is B1. To reach B2, you need to speak more continuously and..."
   }
   
   Note: Evaluate holistically based on grammar in transcription, vocabulary range, and likely fluency across all 5 parts. Be constructive and specific.
@@ -243,6 +251,7 @@ export async function assessSpeaking(
       strengths: ["Shows communication ability", "Addresses the prompts"],
       improvements: ["Work on fluency", "Expand speaking vocabulary", "Practice complex structures"],
       detailed_feedback: "Your speaking responses demonstrate you can communicate on familiar topics. Continue practicing for greater fluency and accuracy.",
+      target_level_gap: "To reach your target level, practice speaking at length on complex topics.",
     };
   }
 }

@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
             userResponse: text.substring(0, 2000),
             strengths: JSON.stringify(result.strengths || []),
             improvements: JSON.stringify(result.improvements || []),
-            feedback: result.detailed_feedback || "No feedback provided",
+            feedback: result.target_level_gap ? `${result.detailed_feedback}\n\n**Target Goal Analysis:**\n${result.target_level_gap}` : result.detailed_feedback || "No feedback provided",
           },
         });
       }

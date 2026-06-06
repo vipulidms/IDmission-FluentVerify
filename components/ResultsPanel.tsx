@@ -29,6 +29,7 @@ interface AssessmentResult {
   strengths: string[];
   improvements: string[];
   detailed_feedback: string;
+  target_level_gap?: string;
 }
 
 interface Props {
@@ -108,6 +109,7 @@ export default function ResultsPanel({ result, language, skill, prompt, onRetry,
   const cefrLevel = safeResult.cefr_level || "B1";
   const overallScore = typeof safeResult.overall_score === "number" ? safeResult.overall_score : 60;
   const detailedFeedback = safeResult.detailed_feedback || "Assessment complete. Keep practicing to improve your skills!";
+  const targetLevelGap = safeResult.target_level_gap;
   const integrityRisk = integrityRiskLevel || "low";
 
   const color = cefrColors[cefrLevel] || "#6366f1";
@@ -492,7 +494,7 @@ export default function ResultsPanel({ result, language, skill, prompt, onRetry,
         )}
 
         {/* Detailed Feedback */}
-        <div className="glass-card" style={{ padding: "28px", marginBottom: "32px" }}>
+        <div className="glass-card" style={{ padding: "28px", marginBottom: targetLevelGap && !isHistoryView ? "24px" : "32px" }}>
           <h3 style={{ fontSize: "18px", fontWeight: 700, marginBottom: "16px" }}>
             🤖 AI Detailed Feedback
           </h3>
@@ -500,6 +502,18 @@ export default function ResultsPanel({ result, language, skill, prompt, onRetry,
             {detailedFeedback}
           </p>
         </div>
+
+        {/* Target Goal Analysis */}
+        {targetLevelGap && !isHistoryView && (
+          <div className="glass-card" style={{ padding: "28px", marginBottom: "32px", borderLeft: "4px solid #6366f1" }}>
+            <h3 style={{ fontSize: "18px", fontWeight: 700, marginBottom: "16px", color: "#6366f1", display: "flex", alignItems: "center", gap: "8px" }}>
+              🎯 Target Goal Analysis
+            </h3>
+            <p style={{ fontSize: "15px", lineHeight: "1.85", color: "var(--text-secondary)" }}>
+              {targetLevelGap}
+            </p>
+          </div>
+        )}
 
         {/* Prompt reference */}
         {prompt && (
