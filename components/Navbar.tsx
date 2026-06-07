@@ -17,7 +17,7 @@ export default function Navbar() {
   const isAdmin = session?.user && (session.user as any).role === "admin";
 
   const navLinks = isAdmin ? [
-    { href: "/dashboard", label: "Dashboard" },
+    { href: "/dashboard", label: "My Dashboard" },
   ] : [];
 
   return (
