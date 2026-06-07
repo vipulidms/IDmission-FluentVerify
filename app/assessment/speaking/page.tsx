@@ -53,6 +53,7 @@ function SpeakingContent() {
   const [webcamWidgetOpen, setWebcamWidgetOpen] = useState(true);
   const [micEnabled, setMicEnabled] = useState(false);
   const [permissionsError, setPermissionsError] = useState("");
+  const [geoInfo, setGeoInfo] = useState<{ ip?: string; lat?: number; lng?: number } | null>(null);
 
   // ── Face monitor ─────────────────────────────────────────────────────────
   const { faceStatus, faceCount, cameraEnabled, modelLoading, initCamera, stopCamera } = useFaceMonitor(
@@ -65,6 +66,34 @@ function SpeakingContent() {
   const requestCameraAndMic = async () => {
     setPermissionsError("");
     setError("");
+
+    // Fetch IP and GeoLocation
+    let ip = "";
+    try {
+      const res = await fetch("https://api.ipify.org?format=json");
+      const data = await res.json();
+      ip = data.ip;
+    } catch (e) {
+      console.warn("Failed to fetch IP", e);
+    }
+
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setGeoInfo({
+            ip,
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+        },
+        (error) => {
+          console.warn("Geolocation error", error);
+          setGeoInfo({ ip });
+        }
+      );
+    } else {
+      setGeoInfo({ ip });
+    }
     
     const camOk = await initCamera();
     if (!camOk) {
@@ -287,7 +316,7 @@ function SpeakingContent() {
       const res = await fetch("/api/assess/speaking", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ responses: finalTranscriptions, language, integrityReport: getReport() }),
+        body: JSON.stringify({ responses: finalTranscriptions, language, integrityReport: { ...getReport(), geoInfo } }),
       });
       if (!res.ok) throw new Error("Assessment failed");
       const data = await res.json();

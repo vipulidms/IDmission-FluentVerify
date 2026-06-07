@@ -229,12 +229,13 @@ export default function AdminDashboardClient({ users }: Props) {
                                 <th>Language</th>
                                 <th>CEFR</th>
                                 <th>Score</th>
+                                <th>Location & IP</th>
                                 <th>Integrity</th>
                               </tr>
                             </thead>
                             <tbody>
-                              {user.assessments.map(assessment => {
-                                let integrityData: { riskLevel?: string; flagged?: boolean; violationCount?: number } = {};
+                                {user.assessments.map(assessment => {
+                                let integrityData: { riskLevel?: string; flagged?: boolean; violationCount?: number; geoInfo?: { ip?: string; lat?: number; lng?: number } } = {};
                                 try { integrityData = assessment.integrityReport ? JSON.parse(assessment.integrityReport) : {}; } catch {}
                                 return (
                                 <tr 
@@ -243,7 +244,12 @@ export default function AdminDashboardClient({ users }: Props) {
                                   className="cursor-pointer hover:bg-white/10 transition-colors"
                                   style={{ cursor: "pointer" }}
                                 >
-                                  <td>{new Date(assessment.createdAt).toLocaleDateString()}</td>
+                                  <td>
+                                    <div>{new Date(assessment.createdAt).toLocaleDateString()}</div>
+                                    <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "2px" }}>
+                                      {new Date(assessment.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </div>
+                                  </td>
                                   <td style={{ textTransform: "capitalize" }}>{skillIcons[assessment.skill]} {assessment.skill}</td>
                                   <td style={{ textTransform: "capitalize" }}>
                                     <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
@@ -252,6 +258,16 @@ export default function AdminDashboardClient({ users }: Props) {
                                   </td>
                                   <td><span className={`cefr-badge cefr-${assessment.cefrLevel}`}>{assessment.cefrLevel}</span></td>
                                   <td style={{ fontWeight: 700, color: "var(--text-brand)" }}>{assessment.overallScore}/100</td>
+                                  <td>
+                                    {integrityData.geoInfo ? (
+                                      <div style={{ fontSize: "11px", color: "var(--text-secondary)", display: "flex", flexDirection: "column", gap: "2px", whiteSpace: "nowrap" }}>
+                                        {integrityData.geoInfo.ip && <div>🌐 {integrityData.geoInfo.ip}</div>}
+                                        {integrityData.geoInfo.lat !== undefined && integrityData.geoInfo.lng !== undefined && <div>📍 {integrityData.geoInfo.lat.toFixed(4)}, {integrityData.geoInfo.lng.toFixed(4)}</div>}
+                                      </div>
+                                    ) : (
+                                      <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>—</span>
+                                    )}
+                                  </td>
                                   <td>
                                     {assessment.integrityReport ? (
                                       integrityData.flagged ? (

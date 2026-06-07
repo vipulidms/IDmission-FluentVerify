@@ -157,6 +157,7 @@ export default function ResultsPanel({ result, language, skill, prompt, onRetry,
           violationCount: typeof parsed.violationCount === "number" ? parsed.violationCount : 0,
           riskLevel: parsed.riskLevel || "low",
           flagged: !!parsed.flagged,
+          geoInfo: parsed.geoInfo || null,
         };
       }
     } catch (e) {
@@ -407,17 +408,46 @@ export default function ResultsPanel({ result, language, skill, prompt, onRetry,
         </div>
 
         {/* Integrity Logs / Timeline */}
-        {reportObj && reportObj.violations.length > 0 && (
-          <div className="glass-card" style={{ padding: "28px", marginBottom: "32px", border: "1px solid rgba(244, 63, 94, 0.2)" }}>
-            <h3 style={{ fontSize: "18px", fontWeight: 700, marginBottom: "16px", color: "var(--brand-rose)", display: "flex", alignItems: "center", gap: "8px" }}>
-              🛡️ Integrity Log ({reportObj.violations.length} event{reportObj.violations.length !== 1 ? "s" : ""})
+        {reportObj && (
+          <div className="glass-card" style={{ padding: "28px", marginBottom: "32px", border: reportObj.violations?.length > 0 ? "1px solid rgba(244, 63, 94, 0.2)" : "1px solid var(--border-subtle)" }}>
+            <h3 style={{ fontSize: "18px", fontWeight: 700, marginBottom: "16px", color: reportObj.violations?.length > 0 ? "var(--brand-rose)" : "var(--text-primary)", display: "flex", alignItems: "center", gap: "8px" }}>
+              🛡️ Session Details {reportObj.violations?.length > 0 ? `(${reportObj.violations.length} event${reportObj.violations.length !== 1 ? "s" : ""})` : ""}
             </h3>
-            <p className="text-secondary" style={{ fontSize: "14px", marginBottom: "16px" }}>
-              The following security events were recorded during this assessment session:
-            </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              {groupedViolations.map((g: any, index: number) => {
-                const firstTime = g.firstTimestamp ? new Date(g.firstTimestamp) : null;
+            
+            <div style={{ display: "flex", gap: "20px", marginBottom: reportObj.violations?.length > 0 ? "20px" : "0", fontSize: "13px", color: "var(--text-secondary)", background: "rgba(255, 255, 255, 0.03)", padding: "12px 16px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border-subtle)", flexWrap: "wrap" }}>
+              {reportObj.geoInfo?.ip ? (
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span style={{ fontSize: "16px" }}>🌐</span>
+                  <span><strong>IP:</strong> {reportObj.geoInfo.ip}</span>
+                </div>
+              ) : (
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span style={{ fontSize: "16px", filter: "grayscale(1)", opacity: 0.5 }}>🌐</span>
+                  <span><strong>IP:</strong> Not captured</span>
+                </div>
+              )}
+              
+              {reportObj.geoInfo?.lat !== undefined && reportObj.geoInfo?.lng !== undefined ? (
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span style={{ fontSize: "16px" }}>📍</span>
+                  <span><strong>Location:</strong> {reportObj.geoInfo.lat.toFixed(4)}, {reportObj.geoInfo.lng.toFixed(4)}</span>
+                </div>
+              ) : (
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span style={{ fontSize: "16px", filter: "grayscale(1)", opacity: 0.5 }}>📍</span>
+                  <span><strong>Location:</strong> Not captured</span>
+                </div>
+              )}
+            </div>
+
+            {reportObj.violations.length > 0 && (
+              <>
+                <p className="text-secondary" style={{ fontSize: "14px", marginBottom: "16px" }}>
+                  The following security events were recorded during this assessment session:
+                </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  {groupedViolations.map((g: any, index: number) => {
+                    const firstTime = g.firstTimestamp ? new Date(g.firstTimestamp) : null;
                 const lastTime = g.lastTimestamp ? new Date(g.lastTimestamp) : null;
                 
                 let timeStr = "";
@@ -490,6 +520,8 @@ export default function ResultsPanel({ result, language, skill, prompt, onRetry,
                 );
               })}
             </div>
+            </>
+            )}
           </div>
         )}
 
