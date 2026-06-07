@@ -102,47 +102,47 @@ export default function RegisterPage() {
         )}
 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "18px" }}>
-          <div className="form-group">
-            <label className="form-label">First Name</label>
-            <input
-              id="register-firstname"
-              type="text"
-              className="form-input"
-              placeholder="John"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              required
-              autoComplete="given-name"
-            />
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "18px" }}>
+            <div className="form-group">
+              <label className="form-label">First Name</label>
+              <input
+                id="register-firstname"
+                type="text"
+                className="form-input"
+                placeholder="John"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                required
+                autoComplete="given-name"
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Last Name</label>
+              <input
+                id="register-lastname"
+                type="text"
+                className="form-input"
+                placeholder="Doe"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                required
+                autoComplete="family-name"
+              />
+            </div>
           </div>
-          <div className="form-group">
-            <label className="form-label">Last Name</label>
-            <input
-              id="register-lastname"
-              type="text"
-              className="form-input"
-              placeholder="Doe"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-              required
-              autoComplete="family-name"
-            />
-          </div>
-        </div>
 
-        <div className="form-group">
-          <label className="form-label">Mobile Number</label>
-          <input
-            id="register-mobile"
-            type="tel"
-            className="form-input"
-            placeholder="+1 (555) 000-0000"
-            value={mobileNumber}
-            onChange={(e) => setMobileNumber(e.target.value)}
-            autoComplete="tel"
-          />
-        </div>
+          <div className="form-group">
+            <label className="form-label">Mobile Number</label>
+            <input
+              id="register-mobile"
+              type="tel"
+              className="form-input"
+              placeholder="+1 (555) 000-0000"
+              value={mobileNumber}
+              onChange={(e) => setMobileNumber(e.target.value)}
+              autoComplete="tel"
+            />
+          </div>
 
           <div className="form-group">
             <label className="form-label">Email Address</label>

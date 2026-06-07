@@ -25,7 +25,7 @@ export default function Navbar() {
       <div className="container">
         <div className="navbar-inner">
           <div className="navbar-logo" style={{ display: "flex", alignItems: "center" }}>
-            <span className="gradient-text" style={{ fontSize: "20px", fontWeight: 800, fontFamily: "Outfit, sans-serif" }}>
+            <span className="gradient-text" style={{ fontSize: "30px", fontWeight: 800, fontFamily: "Outfit, sans-serif" }}>
               FluentVerify
             </span>
           </div>

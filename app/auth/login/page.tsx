@@ -53,7 +53,7 @@ export default function LoginPage() {
       }}>
         {/* Logo */}
         <div style={{ textAlign: "center", marginBottom: "36px" }}>
-          <div style={{ display: "inline-flex", alignItems: "center", fontFamily: "Outfit, sans-serif", fontWeight: 800, fontSize: "20px", letterSpacing: "0.02em" }}>
+          <div style={{ display: "inline-flex", alignItems: "center", fontFamily: "Outfit, sans-serif", fontWeight: 800, fontSize: "34px", letterSpacing: "0.02em" }}>
             <span className="gradient-text">FluentVerify</span>
           </div>
           <h1 style={{ fontSize: "32px", fontWeight: 800, marginTop: "20px", marginBottom: "10px", letterSpacing: "-0.02em", lineHeight: 1.2 }}>Welcome back</h1>
