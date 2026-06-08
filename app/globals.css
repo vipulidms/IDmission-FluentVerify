@@ -337,6 +337,11 @@ img {
   color: var(--text-muted);
 }
 
+select option {
+  background-color: #0a0e27;
+  color: var(--text-primary);
+}
+
 .form-input:focus {
   background: rgba(255, 255, 255, 0.08);
   border-color: var(--brand-primary);
