@@ -39,6 +39,7 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           image: user.image,
           role: user.role,
+          assessmentLanguage: user.assessmentLanguage,
         };
       },
     }),
@@ -48,6 +49,7 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.role = user.role;
+        token.assessmentLanguage = (user as any).assessmentLanguage;
       }
       return token;
     },
@@ -55,6 +57,7 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         (session.user as any).id = token.id;
         (session.user as any).role = token.role;
+        (session.user as any).assessmentLanguage = token.assessmentLanguage;
       }
       return session;
     },

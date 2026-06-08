@@ -8,6 +8,7 @@ interface Props {
     email: string;
     mobileNumber: string | null;
     targetCefrLevel?: string | null;
+    assessmentLanguage?: string;
   };
   onClose: () => void;
   onSuccess: () => void;
@@ -17,6 +18,7 @@ export default function AdminEditUserModal({ user, onClose, onSuccess }: Props) 
   const [email, setEmail] = useState(user.email);
   const [mobileNumber, setMobileNumber] = useState(user.mobileNumber || "");
   const [targetCefrLevel, setTargetCefrLevel] = useState(user.targetCefrLevel || "");
+  const [assessmentLanguage, setAssessmentLanguage] = useState(user.assessmentLanguage || "english");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -52,7 +54,7 @@ export default function AdminEditUserModal({ user, onClose, onSuccess }: Props) 
       const res = await fetch(`/api/admin/users/${user.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, mobileNumber, targetCefrLevel: targetCefrLevel || null, password }),
+        body: JSON.stringify({ email, mobileNumber, targetCefrLevel: targetCefrLevel || null, assessmentLanguage, password }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to edit user");
@@ -95,6 +97,14 @@ export default function AdminEditUserModal({ user, onClose, onSuccess }: Props) 
               <option value="B2">B2 - Upper-Intermediate</option>
               <option value="C1">C1 - Advanced</option>
               <option value="C2">C2 - Mastery</option>
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Assessment Language</label>
+            <select className="form-input" value={assessmentLanguage} onChange={e => setAssessmentLanguage(e.target.value)}>
+              <option value="english">English 🇬🇧</option>
+              <option value="german">German 🇩🇪</option>
             </select>
           </div>
 

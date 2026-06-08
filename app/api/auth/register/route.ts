@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 
 export async function POST(req: NextRequest) {
   try {
-    const { firstName, lastName, mobileNumber, email, password, targetCefrLevel } = await req.json();
+    const { firstName, lastName, mobileNumber, email, password, targetCefrLevel, assessmentLanguage } = await req.json();
 
     if (!email || !password || !firstName || !lastName) {
       return NextResponse.json({ error: "All required fields must be filled" }, { status: 400 });
@@ -26,7 +26,17 @@ export async function POST(req: NextRequest) {
     const role = userCount === 0 ? "admin" : "user";
 
     const user = await prisma.user.create({
-      data: { name: computedName, firstName, lastName, mobileNumber, email, password: hashedPassword, role, targetCefrLevel: targetCefrLevel || null },
+      data: { 
+        name: computedName, 
+        firstName, 
+        lastName, 
+        mobileNumber, 
+        email, 
+        password: hashedPassword, 
+        role, 
+        targetCefrLevel: targetCefrLevel || null,
+        assessmentLanguage: assessmentLanguage || "english"
+      },
     });
 
     return NextResponse.json({ id: user.id, email: user.email, name: user.name }, { status: 201 });

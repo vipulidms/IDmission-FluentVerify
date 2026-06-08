@@ -37,6 +37,7 @@ interface UserData {
   image: string | null;
   role: string;
   targetCefrLevel?: string | null;
+  assessmentLanguage?: string;
   assessments: Assessment[];
 }
 
@@ -321,6 +322,7 @@ export default function AdminDashboardClient({ users }: Props) {
             email: editUser.email,
             mobileNumber: editUser.mobileNumber,
             targetCefrLevel: editUser.targetCefrLevel,
+            assessmentLanguage: editUser.assessmentLanguage,
           }}
           onClose={() => setEditUser(null)} 
           onSuccess={() => { setEditUser(null); router.refresh(); }} 

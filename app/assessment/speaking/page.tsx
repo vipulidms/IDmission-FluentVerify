@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import ResultsPanel from "@/components/ResultsPanel";
 import Flag from "@/components/Flag";
 import { useIntegrityMonitor, requestFullscreen, exitFullscreen } from "@/hooks/useIntegrityMonitor";
@@ -24,7 +25,11 @@ type Phase = "loading" | "intro" | "prepare" | "record" | "transcribe" | "submit
 
 function SpeakingContent() {
   const searchParams = useSearchParams();
-  const language = (searchParams.get("lang") as Language) || "english";
+  const { data: session } = useSession();
+
+  const userLanguage = (session?.user as any)?.assessmentLanguage as Language | undefined;
+  const isAdmin = (session?.user as any)?.role === "admin";
+  const language = (!isAdmin && userLanguage) ? userLanguage : ((searchParams.get("lang") as Language) || "english");
 
   const [qSet, setQSet] = useState<QuestionSet | null>(null);
   const [phase, setPhase] = useState<Phase>("loading");

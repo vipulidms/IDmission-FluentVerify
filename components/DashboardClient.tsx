@@ -290,6 +290,8 @@ export default function DashboardClient({ session, assessments }: Props) {
   const router = useRouter();
   const [selectedAssessment, setSelectedAssessment] = useState<Assessment | null>(null);
   const [activeTab, setActiveTab] = useState<"overview" | "history">("overview");
+  
+  const userLang = (session?.user as any)?.assessmentLanguage || "english";
 
   if (selectedAssessment) {
     let integrityRiskLevel: "low" | "medium" | "high" = "low";
@@ -413,7 +415,7 @@ export default function DashboardClient({ session, assessments }: Props) {
             </p>
           </div>
           <button
-            onClick={() => router.push("/assessment/speaking?lang=english")}
+            onClick={() => router.push(`/assessment/speaking?lang=${userLang}`)}
             className="btn btn-primary"
             style={{ flexShrink: 0 }}
           >
@@ -696,7 +698,7 @@ export default function DashboardClient({ session, assessments }: Props) {
                   {[
                     { lang: "english", skill: "speaking", label: "English Speaking", flag: "gb" },
                     { lang: "german", skill: "speaking", label: "German Speaking", flag: "de" },
-                  ].map((item) => (
+                  ].filter(item => (session?.user as any)?.role === "admin" || item.lang === userLang).map((item) => (
                     <button
                       key={`${item.lang}-${item.skill}`}
                       onClick={() => router.push(`/assessment/${item.skill}?lang=${item.lang}`)}
@@ -730,7 +732,7 @@ export default function DashboardClient({ session, assessments }: Props) {
                 <div className="empty-state-icon">🎯</div>
                 <h3 className="empty-state-title">No assessments yet</h3>
                 <p className="empty-state-desc">Take your first assessment to see your results here.</p>
-                <Link href="/assessment" className="btn btn-primary btn-lg">Start Assessment →</Link>
+                <Link href={`/assessment?lang=${userLang}`} className="btn btn-primary btn-lg">Start Assessment →</Link>
               </div>
             ) : (
               <div style={{ overflowX: "auto" }}>
@@ -803,7 +805,7 @@ export default function DashboardClient({ session, assessments }: Props) {
             <p className="empty-state-desc">
               Complete your first speaking assessment to unlock your CEFR level, score trends, skill radar, and more.
             </p>
-            <Link href="/assessment" className="btn btn-primary btn-lg">Start First Assessment →</Link>
+            <Link href={`/assessment?lang=${userLang}`} className="btn btn-primary btn-lg">Start First Assessment →</Link>
           </div>
         )}
       </div>

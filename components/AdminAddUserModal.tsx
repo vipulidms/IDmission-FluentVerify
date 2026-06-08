@@ -14,6 +14,7 @@ export default function AdminAddUserModal({ onClose, onSuccess }: Props) {
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("user");
   const [targetCefrLevel, setTargetCefrLevel] = useState("");
+  const [assessmentLanguage, setAssessmentLanguage] = useState("english");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -26,7 +27,7 @@ export default function AdminAddUserModal({ onClose, onSuccess }: Props) {
       const res = await fetch("/api/admin/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ firstName, lastName, mobileNumber, email, password, role, targetCefrLevel: targetCefrLevel || null }),
+        body: JSON.stringify({ firstName, lastName, mobileNumber, email, password, role, targetCefrLevel: targetCefrLevel || null, assessmentLanguage }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to add user");
@@ -92,6 +93,14 @@ export default function AdminAddUserModal({ onClose, onSuccess }: Props) {
               <option value="B2">B2 - Upper-Intermediate</option>
               <option value="C1">C1 - Advanced</option>
               <option value="C2">C2 - Mastery</option>
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Assessment Language</label>
+            <select className="form-input" value={assessmentLanguage} onChange={e => setAssessmentLanguage(e.target.value)}>
+              <option value="english">English 🇬🇧</option>
+              <option value="german">German 🇩🇪</option>
             </select>
           </div>
 

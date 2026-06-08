@@ -2,6 +2,7 @@
 import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import ResultsPanel from "@/components/ResultsPanel";
 import Flag from "@/components/Flag";
 
@@ -64,7 +65,12 @@ Klaus: Ja, wir haben einen Tagesausflug nach Montserrat gemacht. Das ist ein Klo
 
 function ListeningContent() {
   const searchParams = useSearchParams();
-  const language = (searchParams.get("lang") as Language) || "english";
+  const { data: session } = useSession();
+
+  const userLanguage = (session?.user as any)?.assessmentLanguage as Language | undefined;
+  const isAdmin = (session?.user as any)?.role === "admin";
+  const language = (!isAdmin && userLanguage) ? userLanguage : ((searchParams.get("lang") as Language) || "english");
+
   const content = listeningContent[language];
 
   const [showTranscript, setShowTranscript] = useState(false);

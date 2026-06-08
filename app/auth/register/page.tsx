@@ -13,6 +13,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [targetCefrLevel, setTargetCefrLevel] = useState("");
+  const [assessmentLanguage, setAssessmentLanguage] = useState("english");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -35,7 +36,7 @@ export default function RegisterPage() {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ firstName, lastName, mobileNumber, email, password, targetCefrLevel: targetCefrLevel || null }),
+        body: JSON.stringify({ firstName, lastName, mobileNumber, email, password, targetCefrLevel: targetCefrLevel || null, assessmentLanguage }),
       });
 
       const data = await res.json();
@@ -199,6 +200,15 @@ export default function RegisterPage() {
               <option value="C2">C2 - Mastery</option>
             </select>
             <p style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "4px" }}>Select this if you are practicing for a specific level.</p>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Assessment Language</label>
+            <select className="form-input" value={assessmentLanguage} onChange={e => setAssessmentLanguage(e.target.value)}>
+              <option value="english">English 🇬🇧</option>
+              <option value="german">German 🇩🇪</option>
+            </select>
+            <p style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "4px" }}>Choose the language you wish to be assessed in.</p>
           </div>
 
           <button

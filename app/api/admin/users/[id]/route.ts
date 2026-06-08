@@ -12,7 +12,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { email, mobileNumber, targetCefrLevel, password } = await req.json();
+    const { email, mobileNumber, targetCefrLevel, assessmentLanguage, password } = await req.json();
 
     if (!email) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 });
@@ -22,6 +22,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       email,
       mobileNumber,
       targetCefrLevel: targetCefrLevel || null,
+      assessmentLanguage: assessmentLanguage || "english",
     };
 
     if (password) {

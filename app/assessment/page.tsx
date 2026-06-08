@@ -2,6 +2,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import Flag from "@/components/Flag";
 
 type Language = "english" | "german";
@@ -17,24 +18,35 @@ const skills = [
 function AssessmentHubContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { data: session } = useSession();
   const [selectedLanguage, setSelectedLanguage] = useState<Language>("english");
   const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
+
+  const userLanguage = (session?.user as any)?.assessmentLanguage as Language | undefined;
+  const isAdmin = (session?.user as any)?.role === "admin";
 
   useEffect(() => {
     const langParam = searchParams.get("lang") as Language | null;
     const skillParam = searchParams.get("skill") as Skill | null;
-    if (langParam && (langParam === "english" || langParam === "german")) {
+    
+    if (userLanguage && !isAdmin) {
+      setSelectedLanguage(userLanguage);
+    } else if (langParam && (langParam === "english" || langParam === "german")) {
       setSelectedLanguage(langParam);
     }
+
     if (skillParam && skills.find((s) => s.id === skillParam)) {
       setSelectedSkill(skillParam);
     }
-  }, [searchParams]);
+  }, [searchParams, userLanguage, isAdmin]);
 
   const handleStart = () => {
     if (!selectedSkill) return;
     router.push(`/assessment/${selectedSkill}?lang=${selectedLanguage}`);
   };
+
+  const showLanguageSelection = !userLanguage || isAdmin;
+  let stepIndex = 1;
 
   return (
     <div className="page-wrapper">
@@ -66,54 +78,73 @@ function AssessmentHubContent() {
 
         <div style={{ paddingBottom: "80px" }}>
           {/* Step 1: Language */}
-          <div style={{ marginBottom: "48px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" }}>
-              <div style={{
-                width: "32px", height: "32px", borderRadius: "50%",
-                background: "var(--gradient-brand)", display: "flex",
-                alignItems: "center", justifyContent: "center",
-                fontSize: "14px", fontWeight: 800, color: "white", flexShrink: 0,
-              }}>1</div>
-              <h2 style={{ fontSize: "22px", fontWeight: 700 }}>Select Language</h2>
-            </div>
+          {showLanguageSelection ? (
+            <div style={{ marginBottom: "48px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" }}>
+                <div style={{
+                  width: "32px", height: "32px", borderRadius: "50%",
+                  background: "var(--gradient-brand)", display: "flex",
+                  alignItems: "center", justifyContent: "center",
+                  fontSize: "14px", fontWeight: 800, color: "white", flexShrink: 0,
+                }}>{stepIndex++}</div>
+                <h2 style={{ fontSize: "22px", fontWeight: 700 }}>Select Language</h2>
+              </div>
 
-            <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
-              {(["english", "german"] as Language[]).map((lang) => (
-                <button
-                  key={lang}
-                  id={`lang-${lang}`}
-                  onClick={() => setSelectedLanguage(lang)}
-                  style={{
-                    display: "flex", alignItems: "center", gap: "16px",
-                    padding: "20px 28px",
-                    borderRadius: "var(--radius-lg)",
-                    border: selectedLanguage === lang
-                      ? "2px solid var(--brand-primary)"
-                      : "1px solid var(--border-subtle)",
-                    background: selectedLanguage === lang
-                      ? "rgba(99, 102, 241, 0.1)"
-                      : "var(--bg-card)",
-                    cursor: "pointer",
-                    transition: "all 0.2s ease",
-                    boxShadow: selectedLanguage === lang ? "var(--shadow-glow)" : "none",
-                  }}
-                >
-                  <span style={{ fontSize: "40px", lineHeight: 1 }}>{lang === "english" ? <Flag country="gb" size={40} /> : <Flag country="de" size={40} />}</span>
-                  <div style={{ textAlign: "left" }}>
-                    <div style={{ fontWeight: 700, fontSize: "18px", color: selectedLanguage === lang ? "var(--text-brand)" : "var(--text-primary)" }}>
-                      {lang === "english" ? "English" : "Deutsch"}
+              <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
+                {(["english", "german"] as Language[]).map((lang) => (
+                  <button
+                    key={lang}
+                    id={`lang-${lang}`}
+                    onClick={() => setSelectedLanguage(lang)}
+                    style={{
+                      display: "flex", alignItems: "center", gap: "16px",
+                      padding: "20px 28px",
+                      borderRadius: "var(--radius-lg)",
+                      border: selectedLanguage === lang
+                        ? "2px solid var(--brand-primary)"
+                        : "1px solid var(--border-subtle)",
+                      background: selectedLanguage === lang
+                        ? "rgba(99, 102, 241, 0.1)"
+                        : "var(--bg-card)",
+                      cursor: "pointer",
+                      transition: "all 0.2s ease",
+                      boxShadow: selectedLanguage === lang ? "var(--shadow-glow)" : "none",
+                    }}
+                  >
+                    <span style={{ fontSize: "40px", lineHeight: 1 }}>{lang === "english" ? <Flag country="gb" size={40} /> : <Flag country="de" size={40} />}</span>
+                    <div style={{ textAlign: "left" }}>
+                      <div style={{ fontWeight: 700, fontSize: "18px", color: selectedLanguage === lang ? "var(--text-brand)" : "var(--text-primary)" }}>
+                        {lang === "english" ? "English" : "Deutsch"}
+                      </div>
+                      <div className="text-secondary" style={{ fontSize: "13px" }}>
+                        {lang === "english" ? "British/American English" : "Standarddeutsch"}
+                      </div>
                     </div>
-                    <div className="text-secondary" style={{ fontSize: "13px" }}>
-                      {lang === "english" ? "British/American English" : "Standarddeutsch"}
-                    </div>
-                  </div>
-                  {selectedLanguage === lang && (
-                    <span style={{ marginLeft: "8px", color: "var(--brand-primary)", fontSize: "20px" }}>✓</span>
-                  )}
-                </button>
-              ))}
+                    {selectedLanguage === lang && (
+                      <span style={{ marginLeft: "8px", color: "var(--brand-primary)", fontSize: "20px" }}>✓</span>
+                    )}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div style={{ marginBottom: "40px", padding: "24px 32px", borderRadius: "var(--radius-xl)", background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", display: "flex", alignItems: "center", gap: "20px", backdropFilter: "blur(8px)" }}>
+              <div style={{ fontSize: "40px", lineHeight: 1 }}>
+                {selectedLanguage === "english" ? <Flag country="gb" size={40} /> : <Flag country="de" size={40} />}
+              </div>
+              <div>
+                <div style={{ fontSize: "12px", fontWeight: 700, color: "var(--text-brand)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "4px" }}>
+                  Assigned Assessment Language
+                </div>
+                <div style={{ fontSize: "18px", fontWeight: 800, color: "var(--text-primary)" }}>
+                  {selectedLanguage === "english" ? "English 🇬🇧" : "German (Deutsch) 🇩🇪"}
+                </div>
+                <div style={{ fontSize: "13px", color: "var(--text-muted)", marginTop: "2px" }}>
+                  Your candidate profile is configured for {selectedLanguage === "english" ? "English" : "German"} language assessments.
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Step 2: Skill */}
           <div style={{ marginBottom: "48px" }}>
@@ -123,7 +154,7 @@ function AssessmentHubContent() {
                 background: "var(--gradient-brand)", display: "flex",
                 alignItems: "center", justifyContent: "center",
                 fontSize: "14px", fontWeight: 800, color: "white", flexShrink: 0,
-              }}>2</div>
+              }}>{stepIndex++}</div>
               <h2 style={{ fontSize: "22px", fontWeight: 700 }}>Select Skill to Assess</h2>
             </div>
 
@@ -177,7 +208,7 @@ function AssessmentHubContent() {
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize: "14px", fontWeight: 800, color: "white", flexShrink: 0,
                 transition: "all 0.3s ease",
-              }}>3</div>
+              }}>{stepIndex++}</div>
               <h2 style={{ fontSize: "22px", fontWeight: 700, color: selectedSkill ? "var(--text-primary)" : "var(--text-muted)" }}>
                 Begin Assessment
               </h2>
