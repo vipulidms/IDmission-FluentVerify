@@ -21,6 +21,28 @@ export default function AdminEditUserModal({ user, onClose, onSuccess }: Props) 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const handleDelete = async () => {
+    if (!window.confirm(`Are you sure you want to delete ${user.name}? This action cannot be undone and will permanently delete all of their assessments.`)) {
+      return;
+    }
+    setLoading(true);
+    setError("");
+
+    try {
+      const res = await fetch(`/api/admin/users/${user.id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to delete user");
+      
+      onSuccess();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -81,9 +103,38 @@ export default function AdminEditUserModal({ user, onClose, onSuccess }: Props) 
             <input type="text" className="form-input" value={password} onChange={e => setPassword(e.target.value)} minLength={8} placeholder="Leave blank to keep current password" />
           </div>
 
-          <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: "100%", padding: "14px", marginTop: "8px" }}>
-            {loading ? "Saving..." : "Save Changes"}
-          </button>
+          <div style={{ display: "flex", gap: "12px", marginTop: "8px" }}>
+            <button
+              type="button"
+              onClick={handleDelete}
+              className="btn btn-ghost"
+              disabled={loading}
+              style={{
+                flex: 1,
+                padding: "14px",
+                borderColor: "rgba(244, 63, 94, 0.4)",
+                color: "var(--brand-rose)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "rgba(244, 63, 94, 0.1)";
+                e.currentTarget.style.borderColor = "var(--brand-rose)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "transparent";
+                e.currentTarget.style.borderColor = "rgba(244, 63, 94, 0.4)";
+              }}
+            >
+              Delete
+            </button>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={loading}
+              style={{ flex: 2, padding: "14px" }}
+            >
+              {loading ? "Saving..." : "Save Changes"}
+            </button>
+          </div>
         </form>
       </div>
     </div>
