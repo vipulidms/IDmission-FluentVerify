@@ -27,6 +27,46 @@ function cleanJsonResponse(text: string): string {
   return text.trim();
 }
 
+function enforceCEFRConsistency(result: any): AssessmentResult {
+  if (!result) return result;
+
+  let cefr = (result.cefr_level || "B1").toUpperCase().trim();
+  const validLevels = ["A1", "A2", "B1", "B2", "C1", "C2"];
+  if (!validLevels.includes(cefr)) {
+    cefr = "B1";
+  }
+  result.cefr_level = cefr;
+
+  const ranges: Record<string, { min: number; max: number; default: number }> = {
+    A1: { min: 0, max: 20, default: 10 },
+    A2: { min: 21, max: 35, default: 28 },
+    B1: { min: 36, max: 55, default: 45 },
+    B2: { min: 56, max: 75, default: 65 },
+    C1: { min: 76, max: 90, default: 83 },
+    C2: { min: 91, max: 100, default: 95 },
+  };
+
+  const range = ranges[cefr];
+  let score = typeof result.overall_score === "number" ? result.overall_score : range.default;
+
+  // Clamp overall score
+  if (score < range.min || score > range.max) {
+    score = Math.max(range.min, Math.min(range.max, score));
+  }
+  result.overall_score = score;
+
+  // Clamp sub-scores
+  if (result.sub_scores) {
+    Object.keys(result.sub_scores).forEach((key) => {
+      if (typeof result.sub_scores[key] === "number") {
+        result.sub_scores[key] = Math.max(range.min, Math.min(range.max, result.sub_scores[key]));
+      }
+    });
+  }
+
+  return result;
+}
+
 export async function assessWriting(
   userText: string,
   prompt: string,
@@ -71,20 +111,17 @@ export async function assessWriting(
 
   try {
     const parsed = JSON.parse(text);
-    if (!CEFR_LEVELS.includes(parsed.cefr_level)) {
-      parsed.cefr_level = "B1";
-    }
-    return parsed;
+    return enforceCEFRConsistency(parsed);
   } catch {
-    return {
+    return enforceCEFRConsistency({
       cefr_level: "B1",
-      overall_score: 60,
-      sub_scores: { grammar: 60, vocabulary: 60, coherence: 60 },
+      overall_score: 50,
+      sub_scores: { grammar: 50, vocabulary: 50, coherence: 50 },
       strengths: ["Shows understanding of the topic", "Attempts to address the prompt"],
       improvements: ["Work on grammar accuracy", "Expand vocabulary range", "Improve text organization"],
       detailed_feedback: "Your response shows basic understanding of the topic. Continue practicing to improve your language skills.",
       target_level_gap: "Focus on producing more complex sentences to reach your target level.",
-    };
+    });
   }
 }
 
@@ -129,17 +166,17 @@ export async function assessReading(
   const text = cleanJsonResponse(result.response.text());
 
   try {
-    return JSON.parse(text);
+    return enforceCEFRConsistency(JSON.parse(text));
   } catch {
-    return {
+    return enforceCEFRConsistency({
       cefr_level: "B1",
-      overall_score: 60,
-      sub_scores: { comprehension: 60, vocabulary: 60 },
+      overall_score: 50,
+      sub_scores: { comprehension: 50, vocabulary: 50 },
       strengths: ["Shows basic reading comprehension", "Attempts all questions"],
       improvements: ["Read more carefully for details", "Practice inference skills"],
       detailed_feedback: "Your reading comprehension shows basic understanding. Focus on reading for specific details and implied meaning.",
       target_level_gap: "To reach your target, practice reading longer and more complex texts.",
-    };
+    });
   }
 }
 
@@ -184,17 +221,17 @@ export async function assessListening(
   const text = cleanJsonResponse(result.response.text());
 
   try {
-    return JSON.parse(text);
+    return enforceCEFRConsistency(JSON.parse(text));
   } catch {
-    return {
+    return enforceCEFRConsistency({
       cefr_level: "B1",
-      overall_score: 60,
-      sub_scores: { comprehension: 60, vocabulary: 60 },
+      overall_score: 50,
+      sub_scores: { comprehension: 50, vocabulary: 50 },
       strengths: ["Shows listening comprehension", "Attempts all questions"],
       improvements: ["Practice active listening", "Focus on key information"],
       detailed_feedback: "Your listening comprehension shows you can understand general topics. Keep practicing to catch specific details.",
       target_level_gap: "To reach your target, practice listening to native speakers at natural speed.",
-    };
+    });
   }
 }
 
@@ -242,16 +279,16 @@ export async function assessSpeaking(
   const text = cleanJsonResponse(result.response.text());
 
   try {
-    return JSON.parse(text);
+    return enforceCEFRConsistency(JSON.parse(text));
   } catch {
-    return {
+    return enforceCEFRConsistency({
       cefr_level: "B1",
-      overall_score: 60,
-      sub_scores: { fluency: 60, grammar: 60, vocabulary: 60, pronunciation: 60 },
+      overall_score: 50,
+      sub_scores: { fluency: 50, grammar: 50, vocabulary: 50, pronunciation: 50 },
       strengths: ["Shows communication ability", "Addresses the prompts"],
       improvements: ["Work on fluency", "Expand speaking vocabulary", "Practice complex structures"],
       detailed_feedback: "Your speaking responses demonstrate you can communicate on familiar topics. Continue practicing for greater fluency and accuracy.",
       target_level_gap: "To reach your target level, practice speaking at length on complex topics.",
-    };
+    });
   }
 }
