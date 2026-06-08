@@ -230,6 +230,13 @@ function AssessmentHubContent() {
                     <p className="text-secondary" style={{ fontSize: "14px" }}>
                       You will receive an instant CEFR score with detailed AI feedback after completing the assessment.
                     </p>
+                    {selectedSkill === "speaking" && (
+                      <div style={{ marginTop: "12px" }}>
+                        <Link href="/guide/speaking" target="_blank" style={{ fontSize: "13px", color: "var(--text-brand)", fontWeight: 600, textDecoration: "underline" }}>
+                          📖 Read Speaking Guide & Test Mic Volume ↗
+                        </Link>
+                      </div>
+                    )}
                   </div>
                   <button
                     id="start-assessment-btn"

@@ -108,14 +108,44 @@ function ListeningContent() {
   };
 
   if (result) {
+    if (isAdmin) {
+      return (
+        <ResultsPanel
+          result={result as Parameters<typeof ResultsPanel>[0]["result"]}
+          language={language}
+          skill="listening"
+          prompt={content.title}
+          onRetry={() => { setResult(null); setAnswers({}); setShowTranscript(false); }}
+        />
+      );
+    }
     return (
-      <ResultsPanel
-        result={result as Parameters<typeof ResultsPanel>[0]["result"]}
-        language={language}
-        skill="listening"
-        prompt={content.title}
-        onRetry={() => { setResult(null); setAnswers({}); setShowTranscript(false); }}
-      />
+      <div className="page-wrapper" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", padding: "20px" }}>
+        <div style={{ position: "fixed", inset: 0, background: "var(--bg-primary)", zIndex: -1 }}>
+          <div className="hero-orb hero-orb-1" style={{ opacity: 0.1 }} />
+        </div>
+        <div className="glass-card animate-scaleIn" style={{ width: "100%", maxWidth: "560px", padding: "48px 40px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: "24px" }}>
+          <div style={{
+            width: "80px", height: "80px", borderRadius: "50%",
+            background: "rgba(16, 185, 129, 0.12)", border: "2px solid #10b981",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: "36px", color: "#10b981", boxShadow: "0 0 20px rgba(16, 185, 129, 0.2)"
+          }}>
+            ✓
+          </div>
+          <div>
+            <h1 style={{ fontSize: "28px", fontWeight: 900, marginBottom: "12px", fontFamily: "'Outfit', sans-serif" }}>
+              Assessment Submitted!
+            </h1>
+            <p className="text-secondary" style={{ fontSize: "15px", lineHeight: "1.6" }}>
+              Thanks for conducting the test. Your information is submitted and your results will be communicated shortly.
+            </p>
+          </div>
+          <Link href="/dashboard" className="btn btn-primary" style={{ padding: "14px 32px", fontSize: "15px", fontWeight: 600, width: "100%", textAlign: "center", display: "inline-block" }}>
+            Go to Dashboard
+          </Link>
+        </div>
+      </div>
     );
   }
 

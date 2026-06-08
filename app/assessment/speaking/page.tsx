@@ -340,16 +340,46 @@ function SpeakingContent() {
   const totalViolations = getReport().violationCount;
 
   if (result) {
+    if (isAdmin) {
+      return (
+        <ResultsPanel
+          result={result as Parameters<typeof ResultsPanel>[0]["result"]}
+          language={language}
+          skill="speaking"
+          prompt="Combined 5-part Speaking Assessment"
+          onRetry={() => window.location.reload()}
+          integrityRiskLevel={(result as any).integrityRiskLevel}
+          integrityReport={(result as any).integrityReport}
+        />
+      );
+    }
     return (
-      <ResultsPanel
-        result={result as Parameters<typeof ResultsPanel>[0]["result"]}
-        language={language}
-        skill="speaking"
-        prompt="Combined 5-part Speaking Assessment"
-        onRetry={() => window.location.reload()}
-        integrityRiskLevel={(result as any).integrityRiskLevel}
-        integrityReport={(result as any).integrityReport}
-      />
+      <div className="page-wrapper" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", padding: "20px" }}>
+        <div style={{ position: "fixed", inset: 0, background: "var(--bg-primary)", zIndex: -1 }}>
+          <div className="hero-orb hero-orb-1" style={{ opacity: 0.1 }} />
+        </div>
+        <div className="glass-card animate-scaleIn" style={{ width: "100%", maxWidth: "560px", padding: "48px 40px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: "24px" }}>
+          <div style={{
+            width: "80px", height: "80px", borderRadius: "50%",
+            background: "rgba(16, 185, 129, 0.12)", border: "2px solid #10b981",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: "36px", color: "#10b981", boxShadow: "0 0 20px rgba(16, 185, 129, 0.2)"
+          }}>
+            ✓
+          </div>
+          <div>
+            <h1 style={{ fontSize: "28px", fontWeight: 900, marginBottom: "12px", fontFamily: "'Outfit', sans-serif" }}>
+              Assessment Submitted!
+            </h1>
+            <p className="text-secondary" style={{ fontSize: "15px", lineHeight: "1.6" }}>
+              Thanks for conducting the test. Your information is submitted and your results will be communicated shortly.
+            </p>
+          </div>
+          <Link href="/dashboard" className="btn btn-primary" style={{ padding: "14px 32px", fontSize: "15px", fontWeight: 600, width: "100%", textAlign: "center", display: "inline-block" }}>
+            Go to Dashboard
+          </Link>
+        </div>
+      </div>
     );
   }
 
@@ -569,16 +599,9 @@ function SpeakingContent() {
               
               {/* Left Column / Control Panel Card */}
               <div 
-                className={
-                  `glass-card p-6 flex flex-col items-center justify-between relative overflow-hidden ${
-                    phase === "record" && recordingTime >= parts[currentPart].speakingTime - 5 
-                      ? "animate-flash-border-rose" 
-                      : ""
-                  }`
-                } 
+                className="glass-card p-6 flex flex-col items-center justify-center relative overflow-hidden" 
                 style={{ 
                   width: "100%", 
-                  minHeight: "380px",
                   padding: "32px 24px"
                 }}
               >
@@ -727,10 +750,9 @@ function SpeakingContent() {
                   </div>
                 )}
 
-                {/* Info and Controls for Prepare & Record phases */}
+                {/* Info for Prepare & Record phases */}
                 {(phase === "prepare" || phase === "record") && parts[currentPart] && (
                   <div style={{ display: "flex", flexDirection: "column", gap: "16px", alignItems: "center", width: "100%", flex: 1, justifyContent: "center", marginTop: "16px" }}>
-                    
                     {/* Title / Header */}
                     <div style={{ textAlign: "center" }}>
                       <div style={{ fontSize: "11px", color: phase === "record" ? "var(--brand-rose)" : "var(--brand-400)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>
@@ -740,93 +762,6 @@ function SpeakingContent() {
                         {parts[currentPart].title}
                       </h3>
                     </div>
-
-                    {/* Timer Widget */}
-                    {phase === "record" && (
-                      <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center" }}>
-                        <div 
-                          className={recordingTime >= parts[currentPart].speakingTime - 5 ? "animate-pulse-timer" : ""} 
-                          style={{ 
-                            fontSize: "36px", 
-                            fontWeight: 900, 
-                            fontFamily: "Outfit, sans-serif", 
-                            lineHeight: 1.1,
-                            color: recordingTime >= parts[currentPart].speakingTime - 5 ? "var(--brand-rose)" : "var(--text-primary)",
-                            display: "inline-block"
-                          }}
-                        >
-                          {Math.floor(recordingTime / 60).toString().padStart(2, "0")}:{(recordingTime % 60).toString().padStart(2, "0")}
-                          <span style={{ fontSize: "12px", color: "var(--text-muted)", marginLeft: "4px", fontWeight: 500 }}>
-                            / {parts[currentPart].speakingTime}s
-                          </span>
-                        </div>
-
-                        {/* Warnings */}
-                        {recordingTime >= parts[currentPart].speakingTime - 5 && (
-                          <div style={{ 
-                            marginTop: "8px", 
-                            fontSize: "11px", 
-                            fontWeight: 700, 
-                            color: "#fda4af", 
-                            background: "rgba(244, 63, 94, 0.15)", 
-                            border: "1px solid rgba(244, 63, 94, 0.3)", 
-                            padding: "4px 10px", 
-                            borderRadius: "9999px",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "4px",
-                            boxShadow: "0 4px 12px rgba(244, 63, 94, 0.15)"
-                          }}>
-                            ⚠️ Auto-submit in {parts[currentPart].speakingTime - recordingTime}s
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Waveform Visualization */}
-                    {phase === "record" && isRecording && (
-                      <div className="waveform" style={{ justifyContent: "center", height: "24px", margin: "4px 0" }}>
-                        {[...Array(9)].map((_, i) => (
-                          <div key={i} className="waveform-bar" style={{ animationDelay: `${i * 0.1}s`, width: "3px", background: "var(--brand-rose)" }} />
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Control Buttons */}
-                    {phase === "record" && (
-                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
-                        {!isRecording ? (
-                          <button id="record-btn" onClick={startRecording} className="record-btn record-btn-idle" title="Start Recording" style={{ width: "56px", height: "56px", fontSize: "24px" }}>🎤</button>
-                        ) : (
-                          <button id="stop-record-btn" onClick={() => { stopRecording(); handleNextPart(); }} className="record-btn record-btn-recording" title="Stop Recording" style={{ width: "56px", height: "56px", fontSize: "24px" }}>⏹️</button>
-                        )}
-                        <span style={{ fontSize: "11px", color: "var(--text-muted)", fontWeight: 500 }}>
-                          {isRecording ? "Click to stop & submit" : "Click to start recording"}
-                        </span>
-                      </div>
-                    )}
-
-                  </div>
-                )}
-
-                {/* Auto-submitting overlay */}
-                {phase === "record" && isAutoSubmitting && (
-                  <div style={{ 
-                    position: "absolute", 
-                    inset: 0, 
-                    background: "rgba(10,14,39,0.95)", 
-                    backdropFilter: "blur(12px)", 
-                    display: "flex", 
-                    flexDirection: "column", 
-                    alignItems: "center", 
-                    justifyContent: "center", 
-                    gap: "12px", 
-                    zIndex: 10,
-                    animation: "fadeIn 0.2s ease"
-                  }}>
-                    <div style={{ fontSize: "36px", animation: "bounce 1s infinite" }}>⏰</div>
-                    <div style={{ fontSize: "20px", fontWeight: 900, color: "var(--brand-rose)", letterSpacing: "-0.02em" }}>Time's Up!</div>
-                    <div style={{ fontSize: "13px", color: "var(--text-secondary)" }}>Auto-submitting response...</div>
                   </div>
                 )}
 
@@ -885,6 +820,16 @@ function SpeakingContent() {
                       </div>
                     </div>
 
+                    <div style={{ textAlign: "center", marginTop: "12px", marginBottom: "18px" }}>
+                      <Link
+                        href="/guide/speaking"
+                        target="_blank"
+                        style={{ fontSize: "13px", color: "var(--text-brand)", fontWeight: 600, textDecoration: "underline" }}
+                      >
+                        📖 Read Speaking Guide & Test Mic Volume ↗
+                      </Link>
+                    </div>
+
                     {/* Start button */}
                     <button
                       id="start-speaking-btn"
@@ -936,15 +881,15 @@ function SpeakingContent() {
                       </div>
                     )}
 
-                    <div className="glass-card" style={{ padding: "28px", minHeight: "220px", display: "flex", flexDirection: "column", gap: "16px", transition: "all 0.3s ease" }}>
+                    <div className="glass-card" style={{ padding: "28px", minHeight: "180px", display: "flex", flexDirection: "column", gap: "16px", transition: "all 0.3s ease" }}>
                       <h4 style={{ fontSize: "11px", color: "var(--text-muted)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", margin: 0 }}>
                         Question / Prompt
                       </h4>
                       <div style={{ 
-                        fontSize: phase === "prepare" ? "22px" : "17px", 
-                        fontWeight: phase === "prepare" ? 600 : 400,
-                        lineHeight: phase === "prepare" ? "1.5" : "1.7", 
-                        color: phase === "prepare" ? "#ffffff" : "var(--text-primary)", 
+                        fontSize: "22px", 
+                        fontWeight: 600,
+                        lineHeight: "1.5", 
+                        color: "#ffffff", 
                         whiteSpace: "pre-wrap", 
                         flex: 1,
                         transition: "all 0.3s ease"
@@ -953,15 +898,116 @@ function SpeakingContent() {
                       </div>
                     </div>
 
-                    {/* Live Transcription Box (Record phase only) */}
-                    {phase === "record" && currentTranscription && (
-                      <div className="glass-card animate-fadeIn" style={{ padding: "20px", minHeight: "100px", borderLeft: "3px solid var(--brand-primary)" }}>
-                        <div style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700, marginBottom: "8px" }}>
-                          Live Transcription
+                    {/* Recording Action / Progress controls panel below Question */}
+                    {phase === "record" && (
+                      <div 
+                        className={`glass-card animate-fadeIn ${recordingTime >= parts[currentPart].speakingTime - 5 ? "animate-flash-border-rose" : ""}`}
+                        style={{
+                          padding: "24px 32px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          gap: "24px",
+                          transition: "all 0.3s ease",
+                          background: "linear-gradient(135deg, rgba(255, 255, 255, 0.01) 0%, rgba(255, 255, 255, 0.03) 100%)",
+                          border: "1px solid var(--border-subtle)",
+                          borderRadius: "16px",
+                          position: "relative",
+                          marginTop: "20px"
+                        }}
+                      >
+                        {/* Timer widget on the left */}
+                        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                          <span style={{ fontSize: "11px", color: "var(--text-muted)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                            Speaking Time
+                          </span>
+                          <div 
+                            className={recordingTime >= parts[currentPart].speakingTime - 5 ? "animate-pulse-timer" : ""} 
+                            style={{ 
+                              fontSize: "36px", 
+                              fontWeight: 900, 
+                              fontFamily: "Outfit, sans-serif", 
+                              lineHeight: 1.1,
+                              color: recordingTime >= parts[currentPart].speakingTime - 5 ? "var(--brand-rose)" : "var(--text-primary)",
+                              display: "inline-block"
+                            }}
+                          >
+                            {Math.floor(recordingTime / 60).toString().padStart(2, "0")}:{(recordingTime % 60).toString().padStart(2, "0")}
+                            <span style={{ fontSize: "14px", color: "var(--text-muted)", marginLeft: "4px", fontWeight: 500 }}>
+                              / {parts[currentPart].speakingTime}s
+                            </span>
+                          </div>
+
+                          {/* Warnings */}
+                          {recordingTime >= parts[currentPart].speakingTime - 5 && (
+                            <div style={{ 
+                              marginTop: "4px", 
+                              fontSize: "11px", 
+                              fontWeight: 700, 
+                              color: "#fda4af", 
+                              background: "rgba(244, 63, 94, 0.15)", 
+                              border: "1px solid rgba(244, 63, 94, 0.3)", 
+                              padding: "2px 8px", 
+                              borderRadius: "9999px",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "4px"
+                            }}>
+                              ⚠️ Auto-submitting in {parts[currentPart].speakingTime - recordingTime}s
+                            </div>
+                          )}
                         </div>
-                        <p style={{ fontSize: "14px", color: "var(--text-secondary)", lineHeight: "1.6", margin: 0 }}>
-                          {currentTranscription}
-                        </p>
+
+                        {/* Waveform visualizer in the middle */}
+                        <div style={{ flex: 1, display: "flex", justifyContent: "center" }}>
+                          {isRecording && (
+                            <div className="waveform" style={{ justifyContent: "center", height: "32px", gap: "4px" }}>
+                              {[...Array(12)].map((_, i) => (
+                                <div key={i} className="waveform-bar" style={{ animationDelay: `${i * 0.08}s`, width: "3.5px", background: "var(--brand-rose)", borderRadius: "2px" }} />
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Control buttons on the right */}
+                        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+                            <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--text-primary)" }}>
+                              {isRecording ? "Recording Active" : "Recording Paused"}
+                            </span>
+                            <span style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "2px" }}>
+                              {isRecording ? "Click square to submit" : "Click mic to resume"}
+                            </span>
+                          </div>
+
+                          {!isRecording ? (
+                            <button id="record-btn" onClick={startRecording} className="record-btn record-btn-idle" title="Start Recording" style={{ width: "52px", height: "52px", fontSize: "20px" }}>🎤</button>
+                          ) : (
+                            <button id="stop-record-btn" onClick={() => { stopRecording(); handleNextPart(); }} className="record-btn record-btn-recording" title="Stop Recording" style={{ width: "52px", height: "52px", fontSize: "20px" }}>⏹️</button>
+                          )}
+                        </div>
+
+                        {/* Auto-submitting overlay inside this banner */}
+                        {isAutoSubmitting && (
+                          <div style={{ 
+                            position: "absolute", 
+                            inset: 0, 
+                            background: "rgba(10,14,39,0.95)", 
+                            backdropFilter: "blur(12px)", 
+                            display: "flex", 
+                            flexDirection: "column", 
+                            alignItems: "center", 
+                            justifyContent: "center", 
+                            gap: "6px", 
+                            zIndex: 10,
+                            borderRadius: "16px",
+                            animation: "fadeIn 0.2s ease"
+                          }}>
+                            <div style={{ fontSize: "24px", animation: "bounce 1s infinite" }}>⏰</div>
+                            <div style={{ fontSize: "16px", fontWeight: 900, color: "var(--brand-rose)", letterSpacing: "-0.01em" }}>Time's Up!</div>
+                            <div style={{ fontSize: "11px", color: "var(--text-secondary)" }}>Auto-submitting response...</div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </>

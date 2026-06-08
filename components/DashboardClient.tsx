@@ -292,8 +292,9 @@ export default function DashboardClient({ session, assessments }: Props) {
   const [activeTab, setActiveTab] = useState<"overview" | "history">("overview");
   
   const userLang = (session?.user as any)?.assessmentLanguage || "english";
+  const isAdmin = (session?.user as any)?.role === "admin";
 
-  if (selectedAssessment) {
+  if (selectedAssessment && isAdmin) {
     let integrityRiskLevel: "low" | "medium" | "high" = "low";
     try {
       if (selectedAssessment.integrityReport) {
@@ -439,282 +440,346 @@ export default function DashboardClient({ session, assessments }: Props) {
         {activeTab === "overview" && (
           <>
             {/* ─── CEFR Profile Hero ─── */}
-            {totalAssessments > 0 ? (
-              <div className="glass-card" style={{ padding: "32px", marginBottom: "28px", background: "linear-gradient(135deg, rgba(21,27,61,0.8) 0%, rgba(30,40,80,0.6) 100%)", position: "relative", overflow: "hidden" }}>
-                {/* Glow behind badge */}
-                <div style={{
-                  position: "absolute", top: "-40px", right: "-40px",
-                  width: "200px", height: "200px",
-                  borderRadius: "50%",
-                  background: latestMeta ? `radial-gradient(circle, ${latestMeta.color}22, transparent)` : "transparent",
-                  filter: "blur(40px)",
-                  pointerEvents: "none",
-                }} />
-
-                <div style={{ display: "flex", alignItems: "center", gap: "32px", flexWrap: "wrap" }}>
-                  {/* Big CEFR Badge */}
-                  <div style={{ position: "relative", flexShrink: 0 }}>
-                    <div style={{
-                      width: "100px", height: "100px", borderRadius: "50%",
-                      background: latestMeta ? `radial-gradient(circle at 35% 35%, ${latestMeta.color}, ${latestMeta.color}99)` : "var(--gradient-brand)",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      fontSize: "28px", fontWeight: 900, fontFamily: "'Outfit', sans-serif",
-                      color: "white",
-                      boxShadow: latestMeta ? `0 0 40px ${latestMeta.glow}, 0 0 80px ${latestMeta.glow}` : "none",
-                    }}>
-                      {latestCEFR}
-                    </div>
-                    <div style={{
-                      position: "absolute", inset: "-6px", borderRadius: "50%",
-                      border: latestMeta ? `2px solid ${latestMeta.color}44` : "none",
-                      animation: "ping 3s ease-in-out infinite",
-                    }} />
+            {!isAdmin ? (
+              /* Simple Candidate Workspace Overview */
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "28px", alignItems: "start" }}>
+                {/* Welcome & Status Panel */}
+                <div className="glass-card" style={{ padding: "32px", minHeight: "220px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                  <div>
+                    <h3 style={{ fontSize: "20px", fontWeight: 800, marginBottom: "12px" }}>
+                      📝 Candidate Test Space
+                    </h3>
+                    <p className="text-secondary" style={{ fontSize: "14px", lineHeight: "1.6" }}>
+                      Welcome to your IDmission FluentVerify test dashboard. Complete your speaking assessment below. 
+                      Your responses will be evaluated by our AI grading engine, and your results will be directly communicated to the test administrator.
+                    </p>
                   </div>
-
-                  {/* Info */}
-                  <div style={{ flex: 1, minWidth: "200px" }}>
-                    <div style={{ fontSize: "13px", fontWeight: 600, color: latestMeta?.color || "var(--text-brand)", marginBottom: "4px", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                      Current Level — {latestMeta?.label || ""}
-                    </div>
-                    <div style={{ fontSize: "clamp(18px, 3vw, 26px)", fontWeight: 800, marginBottom: "8px" }}>
-                      {latestMeta?.desc || "Keep practicing to unlock your level"}
-                    </div>
-                    <div style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
-                      <div style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
-                        🎯 <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>{totalAssessments}</span> sessions completed
-                      </div>
-                      <div style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
-                        📅 <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>{uniqueDays}</span> practice days
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Score ring */}
-                  <div style={{ textAlign: "center", flexShrink: 0 }}>
-                    <div style={{ position: "relative", width: "80px", height: "80px", margin: "0 auto" }}>
-                      <svg width="80" height="80" style={{ transform: "rotate(-90deg)" }}>
-                        <circle cx="40" cy="40" r="32" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="6" />
-                        <circle
-                          cx="40" cy="40" r="32" fill="none"
-                          stroke={latestMeta?.color || "#6366f1"}
-                          strokeWidth="6"
-                          strokeLinecap="round"
-                          strokeDasharray={`${2 * Math.PI * 32}`}
-                          strokeDashoffset={`${2 * Math.PI * 32 * (1 - avgScore / 100)}`}
-                          style={{ transition: "stroke-dashoffset 1.2s ease" }}
-                        />
-                      </svg>
-                      <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-                        <div style={{ fontSize: "18px", fontWeight: 800, fontFamily: "'Outfit', sans-serif", color: latestMeta?.color || "var(--text-brand)" }}>
-                          <AnimatedScore value={avgScore} />
-                        </div>
-                      </div>
-                    </div>
-                    <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "6px", fontWeight: 600 }}>AVG SCORE</div>
-                  </div>
-                </div>
-              </div>
-            ) : null}
-
-            {/* ─── Stats Row ─── */}
-            <div className="stats-grid" style={{ marginBottom: "28px" }}>
-              {[
-                { icon: "🎯", value: totalAssessments, label: "Total Sessions", accent: "var(--brand-primary)" },
-                { icon: "📈", value: avgScore || "—", label: "Average Score", accent: "#6366f1" },
-                { icon: "🏆", value: bestScore || "—", label: "Best Score", accent: "#f59e0b" },
-                { icon: "📅", value: uniqueDays, label: "Active Days", accent: "#10b981" },
-              ].map((stat, i) => (
-                <div key={i} className="stat-card" style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                  <div style={{ fontSize: "22px", marginBottom: "6px" }}>{stat.icon}</div>
-                  <div style={{ fontFamily: "'Outfit', sans-serif", fontSize: "32px", fontWeight: 800, color: stat.accent }}>
-                    {typeof stat.value === "number" ? <AnimatedScore value={stat.value} /> : stat.value}
-                  </div>
-                  <div className="stat-label">{stat.label}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* ─── CEFR Journey Roadmap ─── */}
-            <div className="glass-card" style={{ padding: "28px", marginBottom: "28px" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "24px", flexWrap: "wrap", gap: "12px" }}>
-                <div>
-                  <h3 style={{ fontSize: "18px", fontWeight: 700, marginBottom: "4px" }}>🗺 CEFR Learning Roadmap</h3>
-                  <p className="text-secondary" style={{ fontSize: "13px" }}>Your journey from A1 to C2 mastery</p>
-                </div>
-                {latestCEFR !== "—" && latestCEFR !== "C2" && (
-                  <div style={{ fontSize: "12px", color: "var(--text-muted)", background: "rgba(99,102,241,0.08)", padding: "6px 12px", borderRadius: "8px", border: "1px solid rgba(99,102,241,0.15)" }}>
-                    Next: <span style={{ color: CEFR_META[CEFR_ORDER[CEFR_ORDER.indexOf(latestCEFR) + 1]]?.color, fontWeight: 700 }}>
-                      {CEFR_ORDER[CEFR_ORDER.indexOf(latestCEFR) + 1]}
+                  <div style={{
+                    marginTop: "16px",
+                    padding: "12px 14px",
+                    background: "rgba(99, 102, 241, 0.08)",
+                    border: "1px solid rgba(99, 102, 241, 0.2)",
+                    borderRadius: "10px",
+                    fontSize: "13px",
+                    color: "var(--text-muted)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px"
+                  }}>
+                    🛡️ <strong>Assigned Language:</strong> 
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", color: "var(--text-primary)", fontWeight: 600, textTransform: "capitalize" }}>
+                      {userLang === "english" ? <><Flag country="gb" size={14} /> English</> : <><Flag country="de" size={14} /> German</>}
                     </span>
                   </div>
-                )}
-              </div>
-              <CEFRRoadmap currentLevel={latestCEFR} assessments={assessments} />
-            </div>
+                </div>
 
-            {/* ─── Analytics Row ─── */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", marginBottom: "28px" }}>
-              {/* Score Trend */}
-              <div className="glass-card" style={{ padding: "28px" }}>
-                <h3 style={{ fontSize: "16px", fontWeight: 700, marginBottom: "6px" }}>📈 Score Trend</h3>
-                <p className="text-secondary" style={{ fontSize: "12px", marginBottom: "20px" }}>Your last {trendData.length} assessments</p>
-                {trendData.length >= 2 ? (
-                  <ResponsiveContainer width="100%" height={200}>
-                    <LineChart data={trendData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-                      <XAxis dataKey="date" tick={{ fill: "var(--text-muted)", fontSize: 11 }} axisLine={false} tickLine={false} />
-                      <YAxis domain={[0, 100]} tick={{ fill: "var(--text-muted)", fontSize: 11 }} axisLine={false} tickLine={false} />
-                      <Tooltip
-                        contentStyle={{ background: "var(--bg-card)", border: "1px solid var(--border-glass)", borderRadius: "8px", color: "var(--text-primary)", fontSize: "13px" }}
-                        formatter={(v) => [`${v}/100`, "Score"]}
-                      />
-                      <defs>
-                        <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
-                          <stop offset="0%" stopColor="#6366f1" />
-                          <stop offset="100%" stopColor="#60a5fa" />
-                        </linearGradient>
-                      </defs>
-                      <Line
-                        type="monotone"
-                        dataKey="score"
-                        stroke="url(#lineGrad)"
-                        strokeWidth={2.5}
-                        dot={{ fill: "#6366f1", r: 4, strokeWidth: 2, stroke: "var(--bg-primary)" }}
-                        activeDot={{ r: 6, fill: "#60a5fa" }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div style={{ height: "200px", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)", fontSize: "14px", textAlign: "center" }}>
-                    <div>
-                      <div style={{ fontSize: "36px", marginBottom: "12px", opacity: 0.4 }}>📈</div>
-                      Complete 2+ assessments<br />to see your trend
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Radar */}
-              <div className="glass-card" style={{ padding: "28px" }}>
-                <h3 style={{ fontSize: "16px", fontWeight: 700, marginBottom: "6px" }}>🕸 Skill Breakdown</h3>
-                <p className="text-secondary" style={{ fontSize: "12px", marginBottom: "20px" }}>Average sub-scores across all sessions</p>
-                {radarData.length > 0 && radarData.some((d) => d.A > 0) ? (
-                  <ResponsiveContainer width="100%" height={200}>
-                    <RadarChart data={radarData} margin={{ top: 0, right: 20, bottom: 0, left: 20 }}>
-                      <PolarGrid stroke="rgba(255,255,255,0.06)" />
-                      <PolarAngleAxis dataKey="subject" tick={{ fill: "var(--text-secondary)", fontSize: 11 }} />
-                      <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
-                      <Radar
-                        name="Score"
-                        dataKey="A"
-                        stroke="#6366f1"
-                        strokeWidth={2}
-                        fill="#6366f1"
-                        fillOpacity={0.18}
-                        dot={{ fill: "#818cf8", r: 3 }}
-                      />
-                      <Tooltip
-                        contentStyle={{ background: "var(--bg-card)", border: "1px solid var(--border-glass)", borderRadius: "8px", color: "var(--text-primary)", fontSize: "13px" }}
-                        formatter={(v) => [`${v}/100`]}
-                      />
-                    </RadarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div style={{ height: "200px", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)", fontSize: "14px", textAlign: "center" }}>
-                    <div>
-                      <div style={{ fontSize: "36px", marginBottom: "12px", opacity: 0.4 }}>🕸</div>
-                      Complete assessments<br />to see your skill radar
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* ─── Activity Heatmap + Improvements ─── */}
-            <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: "24px", marginBottom: "28px" }}>
-              <div className="glass-card" style={{ padding: "28px" }}>
-                <h3 style={{ fontSize: "16px", fontWeight: 700, marginBottom: "6px" }}>🔥 Practice Activity</h3>
-                <p className="text-secondary" style={{ fontSize: "12px", marginBottom: "20px" }}>Last 16 weeks — each cell = one day</p>
-                <ActivityHeatmap activityMap={activityMap} />
-              </div>
-
-              <div className="glass-card" style={{ padding: "28px" }}>
-                <h3 style={{ fontSize: "16px", fontWeight: 700, marginBottom: "6px" }}>💡 Top Focus Areas</h3>
-                <p className="text-secondary" style={{ fontSize: "12px", marginBottom: "20px" }}>Most common improvement points from AI feedback</p>
-                {topImprovements.length > 0 ? (
-                  <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                    {topImprovements.map((item, i) => (
-                      <div key={i} className="insight-chip">
-                        <span style={{ fontSize: "16px", flexShrink: 0 }}>
-                          {["🎯", "💬", "📝", "🔤"][i % 4]}
-                        </span>
-                        {item}
-                      </div>
+                {/* Quick Start Panel */}
+                <div className="glass-card" style={{ padding: "32px", minHeight: "220px" }}>
+                  <h3 style={{ fontSize: "16px", fontWeight: 700, marginBottom: "6px" }}>🚀 Quick Start</h3>
+                  <p className="text-secondary" style={{ fontSize: "12px", marginBottom: "20px" }}>Jump straight into your assessment</p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                    {[
+                      { lang: "english", skill: "speaking", label: "English Speaking", flag: "gb" },
+                      { lang: "german", skill: "speaking", label: "German Speaking", flag: "de" },
+                    ].filter(item => item.lang === userLang).map((item) => (
+                      <button
+                        key={`${item.lang}-${item.skill}`}
+                        onClick={() => router.push(`/assessment/${item.skill}?lang=${item.lang}`)}
+                        className="btn btn-primary"
+                        style={{ display: "flex", alignItems: "center", gap: "10px", justifyContent: "center", width: "100%", padding: "14px" }}
+                      >
+                        <Flag country={item.flag as any} size={16} />
+                        {skillIcons[item.skill]} Start {item.label} Test
+                      </button>
                     ))}
+                    <div style={{ padding: "12px 14px", borderRadius: "10px", background: "rgba(255,255,255,0.03)", border: "1px dashed var(--border-subtle)", textAlign: "center", fontSize: "12px", color: "var(--text-muted)" }}>
+                      ✍️ 👂 📖 Writing, Listening & Reading — <span style={{ color: "var(--text-brand)" }}>Coming Soon</span>
+                    </div>
                   </div>
-                ) : (
-                  <div style={{ textAlign: "center", padding: "24px 0", color: "var(--text-muted)", fontSize: "13px" }}>
-                    <div style={{ fontSize: "32px", marginBottom: "10px", opacity: 0.4 }}>💡</div>
-                    Complete assessments to see<br />your personalized tips
-                  </div>
-                )}
+                </div>
               </div>
-            </div>
+            ) : (
+              /* Full Admin/Standard Overview */
+              <>
+                {/* ─── CEFR Profile Hero ─── */}
+                {totalAssessments > 0 ? (
+                  <div className="glass-card" style={{ padding: "32px", marginBottom: "28px", background: "linear-gradient(135deg, rgba(21,27,61,0.8) 0%, rgba(30,40,80,0.6) 100%)", position: "relative", overflow: "hidden" }}>
+                    {/* Glow behind badge */}
+                    <div style={{
+                      position: "absolute", top: "-40px", right: "-40px",
+                      width: "200px", height: "200px",
+                      borderRadius: "50%",
+                      background: latestMeta ? `radial-gradient(circle, ${latestMeta.color}22, transparent)` : "transparent",
+                      filter: "blur(40px)",
+                      pointerEvents: "none",
+                    }} />
 
-            {/* ─── Language Split + Quick Actions ─── */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", marginBottom: "28px" }}>
-              {/* Language breakdown */}
-              <div className="glass-card" style={{ padding: "28px" }}>
-                <h3 style={{ fontSize: "16px", fontWeight: 700, marginBottom: "20px" }}>🌍 Languages Practiced</h3>
-                <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                  {[
-                    { lang: "English", country: "gb", count: engCount, color: "#6366f1" },
-                    { lang: "German", country: "de", count: deCount, color: "#10b981" },
-                  ].map((l) => (
-                    <div key={l.lang}>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                          <Flag country={l.country as any} size={20} />
-                          <span style={{ fontSize: "14px", fontWeight: 600 }}>{l.lang}</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: "32px", flexWrap: "wrap" }}>
+                      {/* Big CEFR Badge */}
+                      <div style={{ position: "relative", flexShrink: 0 }}>
+                        <div style={{
+                          width: "100px", height: "100px", borderRadius: "50%",
+                          background: latestMeta ? `radial-gradient(circle at 35% 35%, ${latestMeta.color}, ${latestMeta.color}99)` : "var(--gradient-brand)",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: "28px", fontWeight: 900, fontFamily: "'Outfit', sans-serif",
+                          color: "white",
+                          boxShadow: latestMeta ? `0 0 40px ${latestMeta.glow}, 0 0 80px ${latestMeta.glow}` : "none",
+                        }}>
+                          {latestCEFR}
                         </div>
-                        <span style={{ fontSize: "13px", color: "var(--text-muted)" }}>{l.count} session{l.count !== 1 ? "s" : ""}</span>
-                      </div>
-                      <div className="progress-bar">
-                        <div className="progress-fill" style={{
-                          width: totalAssessments ? `${(l.count / totalAssessments) * 100}%` : "0%",
-                          background: `linear-gradient(90deg, ${l.color}, ${l.color}aa)`,
+                        <div style={{
+                          position: "absolute", inset: "-6px", borderRadius: "50%",
+                          border: latestMeta ? `2px solid ${latestMeta.color}44` : "none",
+                          animation: "ping 3s ease-in-out infinite",
                         }} />
                       </div>
+
+                      {/* Info */}
+                      <div style={{ flex: 1, minWidth: "200px" }}>
+                        <div style={{ fontSize: "13px", fontWeight: 600, color: latestMeta?.color || "var(--text-brand)", marginBottom: "4px", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                          Current Level — {latestMeta?.label || ""}
+                        </div>
+                        <div style={{ fontSize: "clamp(18px, 3vw, 26px)", fontWeight: 800, marginBottom: "8px" }}>
+                          {latestMeta?.desc || "Keep practicing to unlock your level"}
+                        </div>
+                        <div style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
+                          <div style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
+                            🎯 <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>{totalAssessments}</span> sessions completed
+                          </div>
+                          <div style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
+                            📅 <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>{uniqueDays}</span> practice days
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Score ring */}
+                      <div style={{ textAlign: "center", flexShrink: 0 }}>
+                        <div style={{ position: "relative", width: "80px", height: "80px", margin: "0 auto" }}>
+                          <svg width="80" height="80" style={{ transform: "rotate(-90deg)" }}>
+                            <circle cx="40" cy="40" r="32" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="6" />
+                            <circle
+                              cx="40" cy="40" r="32" fill="none"
+                              stroke={latestMeta?.color || "#6366f1"}
+                              strokeWidth="6"
+                              strokeLinecap="round"
+                              strokeDasharray={`${2 * Math.PI * 32}`}
+                              strokeDashoffset={`${2 * Math.PI * 32 * (1 - avgScore / 100)}`}
+                              style={{ transition: "stroke-dashoffset 1.2s ease" }}
+                            />
+                          </svg>
+                          <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                            <div style={{ fontSize: "18px", fontWeight: 800, fontFamily: "'Outfit', sans-serif", color: latestMeta?.color || "var(--text-brand)" }}>
+                              <AnimatedScore value={avgScore} />
+                            </div>
+                          </div>
+                        </div>
+                        <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "6px", fontWeight: 600 }}>AVG SCORE</div>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+
+                {/* ─── Stats Row ─── */}
+                <div className="stats-grid" style={{ marginBottom: "28px" }}>
+                  {[
+                    { icon: "🎯", value: totalAssessments, label: "Total Sessions", accent: "var(--brand-primary)" },
+                    { icon: "📈", value: avgScore || "—", label: "Average Score", accent: "#6366f1" },
+                    { icon: "🏆", value: bestScore || "—", label: "Best Score", accent: "#f59e0b" },
+                    { icon: "📅", value: uniqueDays, label: "Active Days", accent: "#10b981" },
+                  ].map((stat, i) => (
+                    <div key={i} className="stat-card" style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                      <div style={{ fontSize: "22px", marginBottom: "6px" }}>{stat.icon}</div>
+                      <div style={{ fontFamily: "'Outfit', sans-serif", fontSize: "32px", fontWeight: 800, color: stat.accent }}>
+                        {typeof stat.value === "number" ? <AnimatedScore value={stat.value} /> : stat.value}
+                      </div>
+                      <div className="stat-label">{stat.label}</div>
                     </div>
                   ))}
                 </div>
-              </div>
 
-              {/* Quick Start */}
-              <div className="glass-card" style={{ padding: "28px" }}>
-                <h3 style={{ fontSize: "16px", fontWeight: 700, marginBottom: "6px" }}>🚀 Quick Start</h3>
-                <p className="text-secondary" style={{ fontSize: "12px", marginBottom: "16px" }}>Jump straight into an assessment</p>
-                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                  {[
-                    { lang: "english", skill: "speaking", label: "English Speaking", flag: "gb" },
-                    { lang: "german", skill: "speaking", label: "German Speaking", flag: "de" },
-                  ].filter(item => (session?.user as any)?.role === "admin" || item.lang === userLang).map((item) => (
-                    <button
-                      key={`${item.lang}-${item.skill}`}
-                      onClick={() => router.push(`/assessment/${item.skill}?lang=${item.lang}`)}
-                      className="btn btn-outline"
-                      style={{ display: "flex", alignItems: "center", gap: "10px", justifyContent: "center", width: "100%" }}
-                    >
-                      <Flag country={item.flag as any} size={16} />
-                      {skillIcons[item.skill]} {item.label}
-                    </button>
-                  ))}
-                  <div style={{ padding: "10px 14px", borderRadius: "10px", background: "rgba(255,255,255,0.03)", border: "1px dashed var(--border-subtle)", textAlign: "center", fontSize: "12px", color: "var(--text-muted)" }}>
-                    ✍️ 👂 📖 Writing, Listening & Reading — <span style={{ color: "var(--text-brand)" }}>Coming Soon</span>
+                {/* ─── CEFR Journey Roadmap ─── */}
+                <div className="glass-card" style={{ padding: "28px", marginBottom: "28px" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "24px", flexWrap: "wrap", gap: "12px" }}>
+                    <div>
+                      <h3 style={{ fontSize: "18px", fontWeight: 700, marginBottom: "4px" }}>🗺 CEFR Learning Roadmap</h3>
+                      <p className="text-secondary" style={{ fontSize: "13px" }}>Your journey from A1 to C2 mastery</p>
+                    </div>
+                    {latestCEFR !== "—" && latestCEFR !== "C2" && (
+                      <div style={{ fontSize: "12px", color: "var(--text-muted)", background: "rgba(99,102,241,0.08)", padding: "6px 12px", borderRadius: "8px", border: "1px solid rgba(99,102,241,0.15)" }}>
+                        Next: <span style={{ color: CEFR_META[CEFR_ORDER[CEFR_ORDER.indexOf(latestCEFR) + 1]]?.color, fontWeight: 700 }}>
+                          {CEFR_ORDER[CEFR_ORDER.indexOf(latestCEFR) + 1]}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <CEFRRoadmap currentLevel={latestCEFR} assessments={assessments} />
+                </div>
+
+                {/* ─── Analytics Row ─── */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", marginBottom: "28px" }}>
+                  {/* Score Trend */}
+                  <div className="glass-card" style={{ padding: "28px" }}>
+                    <h3 style={{ fontSize: "16px", fontWeight: 700, marginBottom: "6px" }}>📈 Score Trend</h3>
+                    <p className="text-secondary" style={{ fontSize: "12px", marginBottom: "20px" }}>Your last {trendData.length} assessments</p>
+                    {trendData.length >= 2 ? (
+                      <ResponsiveContainer width="100%" height={200}>
+                        <LineChart data={trendData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                          <XAxis dataKey="date" tick={{ fill: "var(--text-muted)", fontSize: 11 }} axisLine={false} tickLine={false} />
+                          <YAxis domain={[0, 100]} tick={{ fill: "var(--text-muted)", fontSize: 11 }} axisLine={false} tickLine={false} />
+                          <Tooltip
+                            contentStyle={{ background: "var(--bg-card)", border: "1px solid var(--border-glass)", borderRadius: "8px", color: "var(--text-primary)", fontSize: "13px" }}
+                            formatter={(v) => [`${v}/100`, "Score"]}
+                          />
+                          <defs>
+                            <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
+                              <stop offset="0%" stopColor="#6366f1" />
+                              <stop offset="100%" stopColor="#60a5fa" />
+                            </linearGradient>
+                          </defs>
+                          <Line
+                            type="monotone"
+                            dataKey="score"
+                            stroke="url(#lineGrad)"
+                            strokeWidth={2.5}
+                            dot={{ fill: "#6366f1", r: 4, strokeWidth: 2, stroke: "var(--bg-primary)" }}
+                            activeDot={{ r: 6, fill: "#60a5fa" }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div style={{ height: "200px", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)", fontSize: "14px", textAlign: "center" }}>
+                        <div>
+                          <div style={{ fontSize: "36px", marginBottom: "12px", opacity: 0.4 }}>📈</div>
+                          Complete 2+ assessments<br />to see your trend
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Radar */}
+                  <div className="glass-card" style={{ padding: "28px" }}>
+                    <h3 style={{ fontSize: "16px", fontWeight: 700, marginBottom: "6px" }}>🕸 Skill Breakdown</h3>
+                    <p className="text-secondary" style={{ fontSize: "12px", marginBottom: "20px" }}>Average sub-scores across all sessions</p>
+                    {radarData.length > 0 && radarData.some((d) => d.A > 0) ? (
+                      <ResponsiveContainer width="100%" height={200}>
+                        <RadarChart data={radarData} margin={{ top: 0, right: 20, bottom: 0, left: 20 }}>
+                          <PolarGrid stroke="rgba(255,255,255,0.06)" />
+                          <PolarAngleAxis dataKey="subject" tick={{ fill: "var(--text-secondary)", fontSize: 11 }} />
+                          <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
+                          <Radar
+                            name="Score"
+                            dataKey="A"
+                            stroke="#6366f1"
+                            strokeWidth={2}
+                            fill="#6366f1"
+                            fillOpacity={0.18}
+                            dot={{ fill: "#818cf8", r: 3 }}
+                          />
+                          <Tooltip
+                            contentStyle={{ background: "var(--bg-card)", border: "1px solid var(--border-glass)", borderRadius: "8px", color: "var(--text-primary)", fontSize: "13px" }}
+                            formatter={(v) => [`${v}/100`]}
+                          />
+                        </RadarChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div style={{ height: "200px", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)", fontSize: "14px", textAlign: "center" }}>
+                        <div>
+                          <div style={{ fontSize: "36px", marginBottom: "12px", opacity: 0.4 }}>🕸</div>
+                          Complete assessments<br />to see your skill radar
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
-              </div>
-            </div>
+
+                {/* ─── Activity Heatmap + Improvements ─── */}
+                <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: "24px", marginBottom: "28px" }}>
+                  <div className="glass-card" style={{ padding: "28px" }}>
+                    <h3 style={{ fontSize: "16px", fontWeight: 700, marginBottom: "6px" }}>🔥 Practice Activity</h3>
+                    <p className="text-secondary" style={{ fontSize: "12px", marginBottom: "20px" }}>Last 16 weeks — each cell = one day</p>
+                    <ActivityHeatmap activityMap={activityMap} />
+                  </div>
+
+                  <div className="glass-card" style={{ padding: "28px" }}>
+                    <h3 style={{ fontSize: "16px", fontWeight: 700, marginBottom: "6px" }}>💡 Top Focus Areas</h3>
+                    <p className="text-secondary" style={{ fontSize: "12px", marginBottom: "20px" }}>Most common improvement points from AI feedback</p>
+                    {topImprovements.length > 0 ? (
+                      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                        {topImprovements.map((item, i) => (
+                          <div key={i} className="insight-chip">
+                            <span style={{ fontSize: "16px", flexShrink: 0 }}>
+                              {["🎯", "💬", "📝", "🔤"][i % 4]}
+                            </span>
+                            {item}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div style={{ textAlign: "center", padding: "24px 0", color: "var(--text-muted)", fontSize: "13px" }}>
+                        <div style={{ fontSize: "32px", marginBottom: "10px", opacity: 0.4 }}>💡</div>
+                        Complete assessments to see<br />your personalized tips
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* ─── Language Split + Quick Actions ─── */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", marginBottom: "28px" }}>
+                  {/* Language breakdown */}
+                  <div className="glass-card" style={{ padding: "28px" }}>
+                    <h3 style={{ fontSize: "16px", fontWeight: 700, marginBottom: "20px" }}>🌍 Languages Practiced</h3>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                      {[
+                        { lang: "English", country: "gb", count: engCount, color: "#6366f1" },
+                        { lang: "German", country: "de", count: deCount, color: "#10b981" },
+                      ].map((l) => (
+                        <div key={l.lang}>
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                              <Flag country={l.country as any} size={20} />
+                              <span style={{ fontSize: "14px", fontWeight: 600 }}>{l.lang}</span>
+                            </div>
+                            <span style={{ fontSize: "13px", color: "var(--text-muted)" }}>{l.count} session{l.count !== 1 ? "s" : ""}</span>
+                          </div>
+                          <div className="progress-bar">
+                            <div className="progress-fill" style={{
+                              width: totalAssessments ? `${(l.count / totalAssessments) * 100}%` : "0%",
+                              background: `linear-gradient(90deg, ${l.color}, ${l.color}aa)`,
+                            }} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Quick Start */}
+                  <div className="glass-card" style={{ padding: "28px" }}>
+                    <h3 style={{ fontSize: "16px", fontWeight: 700, marginBottom: "6px" }}>🚀 Quick Start</h3>
+                    <p className="text-secondary" style={{ fontSize: "12px", marginBottom: "16px" }}>Jump straight into an assessment</p>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                      {[
+                        { lang: "english", skill: "speaking", label: "English Speaking", flag: "gb" },
+                        { lang: "german", skill: "speaking", label: "German Speaking", flag: "de" },
+                      ].filter(item => (session?.user as any)?.role === "admin" || item.lang === userLang).map((item) => (
+                        <button
+                          key={`${item.lang}-${item.skill}`}
+                          onClick={() => router.push(`/assessment/${item.skill}?lang=${item.lang}`)}
+                          className="btn btn-outline"
+                          style={{ display: "flex", alignItems: "center", gap: "10px", justifyContent: "center", width: "100%" }}
+                        >
+                          <Flag country={item.flag as any} size={16} />
+                          {skillIcons[item.skill]} {item.label}
+                        </button>
+                      ))}
+                      <div style={{ padding: "10px 14px", borderRadius: "10px", background: "rgba(255,255,255,0.03)", border: "1px dashed var(--border-subtle)", textAlign: "center", fontSize: "12px", color: "var(--text-muted)" }}>
+                        ✍️ 👂 📖 Writing, Listening & Reading — <span style={{ color: "var(--text-brand)" }}>Coming Soon</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
           </>
         )}
 
@@ -741,8 +806,14 @@ export default function DashboardClient({ session, assessments }: Props) {
                     <tr>
                       <th>Skill</th>
                       <th>Language</th>
-                      <th>CEFR Level</th>
-                      <th>Score</th>
+                      {isAdmin ? (
+                        <>
+                          <th>CEFR Level</th>
+                          <th>Score</th>
+                        </>
+                      ) : (
+                        <th>Status</th>
+                      )}
                       <th>Topic</th>
                       <th>Date</th>
                     </tr>
@@ -751,9 +822,9 @@ export default function DashboardClient({ session, assessments }: Props) {
                     {assessments.map((assessment) => (
                       <tr
                         key={assessment.id}
-                        onClick={() => setSelectedAssessment(assessment)}
-                        className="cursor-pointer hover:bg-white/5 transition-colors"
-                        style={{ cursor: "pointer" }}
+                        onClick={isAdmin ? () => setSelectedAssessment(assessment) : undefined}
+                        className={isAdmin ? "cursor-pointer hover:bg-white/5 transition-colors" : ""}
+                        style={{ cursor: isAdmin ? "pointer" : "default" }}
                       >
                         <td>
                           <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -767,17 +838,37 @@ export default function DashboardClient({ session, assessments }: Props) {
                             <span style={{ textTransform: "capitalize" }}>{assessment.language}</span>
                           </span>
                         </td>
-                        <td>
-                          <span className={`cefr-badge cefr-${assessment.cefrLevel}`}>{assessment.cefrLevel}</span>
-                        </td>
-                        <td>
-                          <span style={{
-                            fontWeight: 700,
-                            color: assessment.overallScore >= 70 ? "#10b981" : assessment.overallScore >= 50 ? "#818cf8" : "#f59e0b",
-                          }}>
-                            {assessment.overallScore}/100
-                          </span>
-                        </td>
+                        {isAdmin ? (
+                          <>
+                            <td>
+                              <span className={`cefr-badge cefr-${assessment.cefrLevel}`}>{assessment.cefrLevel}</span>
+                            </td>
+                            <td>
+                              <span style={{
+                                fontWeight: 700,
+                                color: assessment.overallScore >= 70 ? "#10b981" : assessment.overallScore >= 50 ? "#818cf8" : "#f59e0b",
+                              }}>
+                                {assessment.overallScore}/100
+                              </span>
+                            </td>
+                          </>
+                        ) : (
+                          <td>
+                            <span style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "4px",
+                              padding: "4px 10px",
+                              background: "rgba(16, 185, 129, 0.12)",
+                              color: "#10b981",
+                              borderRadius: "9999px",
+                              fontSize: "12px",
+                              fontWeight: 600
+                            }}>
+                              ✓ Submitted
+                            </span>
+                          </td>
+                        )}
                         <td>
                           <span className="text-secondary" style={{ fontSize: "13px" }}>
                             {assessment.prompt.substring(0, 50)}{assessment.prompt.length > 50 ? "…" : ""}

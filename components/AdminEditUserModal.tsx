@@ -68,52 +68,56 @@ export default function AdminEditUserModal({ user, onClose, onSuccess }: Props) 
   };
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}>
-      <div className="glass-card animate-scaleIn" style={{ width: "100%", maxWidth: "440px", padding: "32px", position: "relative" }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", padding: "16px" }}>
+      <div className="glass-card animate-scaleIn" style={{ width: "100%", maxWidth: "640px", maxHeight: "calc(100vh - 32px)", padding: "32px", position: "relative", display: "flex", flexDirection: "column" }}>
         <button onClick={onClose} style={{ position: "absolute", top: "20px", right: "20px", background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: "20px" }}>✕</button>
-        <h2 style={{ fontSize: "20px", fontWeight: 800, marginBottom: "8px" }}>Edit Candidate</h2>
-        <p className="text-secondary" style={{ fontSize: "14px", marginBottom: "24px" }}>Editing: <strong style={{ color: "var(--text-primary)" }}>{user.name}</strong></p>
+        <h2 style={{ fontSize: "20px", fontWeight: 800, marginBottom: "8px", flexShrink: 0 }}>Edit Candidate</h2>
+        <p className="text-secondary" style={{ fontSize: "14px", marginBottom: "24px", flexShrink: 0 }}>Editing: <strong style={{ color: "var(--text-primary)" }}>{user.name}</strong></p>
         
-        {error && <div className="alert alert-error" style={{ marginBottom: "16px" }}>⚠️ {error}</div>}
+        {error && <div className="alert alert-error" style={{ marginBottom: "16px", flexShrink: 0 }}>⚠️ {error}</div>}
         
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          <div className="form-group">
-            <label className="form-label">Email</label>
-            <input type="email" className="form-input" value={email} onChange={e => setEmail(e.target.value)} required />
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px", flexGrow: 1, overflow: "hidden" }}>
+          <div style={{ display: "flex", flexDirection: "column", overflowY: "auto", flexGrow: 1, paddingRight: "6px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "16px" }}>
+              <div className="form-group">
+                <label className="form-label">Email</label>
+                <input type="email" className="form-input" value={email} onChange={e => setEmail(e.target.value)} required />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Mobile Number</label>
+                <input type="tel" className="form-input" value={mobileNumber} onChange={e => setMobileNumber(e.target.value)} />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Target CEFR Level</label>
+                <select className="form-input" value={targetCefrLevel} onChange={e => setTargetCefrLevel(e.target.value)}>
+                  <option value="">None (Assess all levels)</option>
+                  <option value="A1">A1 - Beginner</option>
+                  <option value="A2">A2 - Elementary</option>
+                  <option value="B1">B1 - Intermediate</option>
+                  <option value="B2">B2 - Upper-Intermediate</option>
+                  <option value="C1">C1 - Advanced</option>
+                  <option value="C2">C2 - Mastery</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Assessment Language</label>
+                <select className="form-input" value={assessmentLanguage} onChange={e => setAssessmentLanguage(e.target.value)}>
+                  <option value="english">English 🇬🇧</option>
+                  <option value="german">German 🇩🇪</option>
+                </select>
+              </div>
+
+              <div className="form-group" style={{ gridColumn: "1 / -1" }}>
+                <label className="form-label">New Password (Optional)</label>
+                <input type="text" className="form-input" value={password} onChange={e => setPassword(e.target.value)} minLength={8} placeholder="Leave blank to keep current password" />
+              </div>
+            </div>
           </div>
 
-          <div className="form-group">
-            <label className="form-label">Mobile Number</label>
-            <input type="tel" className="form-input" value={mobileNumber} onChange={e => setMobileNumber(e.target.value)} />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Target CEFR Level</label>
-            <select className="form-input" value={targetCefrLevel} onChange={e => setTargetCefrLevel(e.target.value)}>
-              <option value="">None (Assess all levels)</option>
-              <option value="A1">A1 - Beginner</option>
-              <option value="A2">A2 - Elementary</option>
-              <option value="B1">B1 - Intermediate</option>
-              <option value="B2">B2 - Upper-Intermediate</option>
-              <option value="C1">C1 - Advanced</option>
-              <option value="C2">C2 - Mastery</option>
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Assessment Language</label>
-            <select className="form-input" value={assessmentLanguage} onChange={e => setAssessmentLanguage(e.target.value)}>
-              <option value="english">English 🇬🇧</option>
-              <option value="german">German 🇩🇪</option>
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">New Password (Optional)</label>
-            <input type="text" className="form-input" value={password} onChange={e => setPassword(e.target.value)} minLength={8} placeholder="Leave blank to keep current password" />
-          </div>
-
-          <div style={{ display: "flex", gap: "12px", marginTop: "8px" }}>
+          <div style={{ display: "flex", gap: "12px", marginTop: "8px", flexShrink: 0 }}>
             <button
               type="button"
               onClick={handleDelete}
