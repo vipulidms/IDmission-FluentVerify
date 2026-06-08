@@ -52,6 +52,7 @@ export function useFaceMonitor(
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const absentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const absentFiredRef = useRef(false);
+  const lookingAwayCountRef = useRef(0);
 
   const stopCamera = useCallback(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
@@ -63,6 +64,7 @@ export function useFaceMonitor(
     setCameraEnabled(false);
     setFaceStatus("idle");
     setFaceCount(0);
+    lookingAwayCountRef.current = 0;
   }, []);
 
   const initCamera = useCallback(async (): Promise<boolean> => {
@@ -159,13 +161,29 @@ export function useFaceMonitor(
 
       try {
         const results = detector.detectForVideo(video, performance.now());
-        const count = results.detections?.length ?? 0;
+        
+        // Filter out detections that are too small (likely false positive background noise or objects far away)
+        const validDetections = (results.detections ?? []).filter((d: any) => {
+          if (!d.boundingBox) return false;
+          if (video.videoWidth > 0 && video.videoHeight > 0) {
+            const widthRatio = d.boundingBox.width / video.videoWidth;
+            const heightRatio = d.boundingBox.height / video.videoHeight;
+            // A face occupying less than 8% of either dimension is likely noise
+            if (widthRatio < 0.08 || heightRatio < 0.08) {
+              return false;
+            }
+          }
+          return true;
+        });
+
+        const count = validDetections.length;
         setFaceCount(count);
 
         let localIsLookingAway = false;
 
         if (count === 0) {
           setFaceStatus("absent");
+          lookingAwayCountRef.current = 0;
           // Start absent timer if not already running
           if (!absentTimerRef.current) {
             absentTimerRef.current = setTimeout(() => {
@@ -186,10 +204,11 @@ export function useFaceMonitor(
 
           if (count > 1) {
             setFaceStatus("multiple");
+            lookingAwayCountRef.current = 0;
             onViolation("multiple_faces", `${count} faces detected in frame`);
           } else {
             // Single face — check if looking down or looking away horizontally
-            const detection = results.detections[0];
+            const detection = validDetections[0];
             const bbox = detection?.boundingBox;
             const keypoints = detection?.keypoints;
             let isLookingAway = false;
@@ -226,20 +245,24 @@ export function useFaceMonitor(
             if (isLookingAway) {
               localIsLookingAway = true;
               setFaceStatus("looking_away");
-              onViolation("looking_away", lookingAwayDetail);
+              lookingAwayCountRef.current += 1;
+              if (lookingAwayCountRef.current >= 2) {
+                onViolation("looking_away", lookingAwayDetail);
+              }
             } else {
               setFaceStatus("ok");
+              lookingAwayCountRef.current = 0;
             }
           }
         }
 
         // Draw debug overlay on canvas (optional, shows detection box and keypoints)
         const canvas = canvasRef.current;
-        if (canvas && results.detections?.length) {
+        if (canvas) {
           const ctx = canvas.getContext("2d");
           if (ctx) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            results.detections.forEach((d: any) => {
+            validDetections.forEach((d: any) => {
               if (!d.boundingBox) return;
               const { originX, originY, width, height } = d.boundingBox;
               const scaleX = canvas.width / video.videoWidth;
