@@ -1,5 +1,5 @@
 "use client";
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
@@ -78,6 +78,22 @@ function ListeningContent() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<null | object>(null);
   const [error, setError] = useState("");
+  const [attemptsStatus, setAttemptsStatus] = useState<{ allowedAttempts: number; completedAttempts: number; hasExhaustedAttempts: boolean } | null>(null);
+
+  useEffect(() => {
+    fetch("/api/assess/status")
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.error) {
+          setAttemptsStatus({
+            allowedAttempts: data.allowedAttempts,
+            completedAttempts: data.completedAttempts,
+            hasExhaustedAttempts: data.hasExhaustedAttempts,
+          });
+        }
+      })
+      .catch((err) => console.error("Error fetching attempts status:", err));
+  }, []);
 
   const allAnswered = content.questions.every((q) => answers[q.id]?.trim());
 
@@ -106,6 +122,37 @@ function ListeningContent() {
       setLoading(false);
     }
   };
+
+  if (attemptsStatus?.hasExhaustedAttempts) {
+    return (
+      <div className="page-wrapper" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", padding: "20px" }}>
+        <div style={{ position: "fixed", inset: 0, background: "var(--bg-primary)", zIndex: -1 }}>
+          <div className="hero-orb hero-orb-1" style={{ opacity: 0.1 }} />
+        </div>
+        <div className="glass-card animate-scaleIn" style={{ width: "100%", maxWidth: "560px", padding: "48px 40px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: "24px" }}>
+          <div style={{
+            width: "80px", height: "80px", borderRadius: "50%",
+            background: "rgba(244, 63, 94, 0.12)", border: "2px solid var(--brand-rose)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: "36px", color: "var(--brand-rose)", boxShadow: "0 0 20px rgba(244, 63, 94, 0.2)"
+          }}>
+            ⚠️
+          </div>
+          <div>
+            <h1 style={{ fontSize: "28px", fontWeight: 900, marginBottom: "12px", fontFamily: "'Outfit', sans-serif" }}>
+              Attempts Limit Reached
+            </h1>
+            <p className="text-secondary" style={{ fontSize: "15px", lineHeight: "1.6" }}>
+              You have completed your allowed assessment attempts ({attemptsStatus.completedAttempts} of {attemptsStatus.allowedAttempts} completed). Your responses are submitted for review. Please contact your administrator for further attempts.
+            </p>
+          </div>
+          <Link href="/dashboard" className="btn btn-primary" style={{ padding: "14px 32px", fontSize: "15px", fontWeight: 600, width: "100%", textAlign: "center", display: "inline-block" }}>
+            Go to Dashboard
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   if (result) {
     if (isAdmin) {
@@ -142,7 +189,7 @@ function ListeningContent() {
             </p>
           </div>
           <Link href="/dashboard" className="btn btn-primary" style={{ padding: "14px 32px", fontSize: "15px", fontWeight: 600, width: "100%", textAlign: "center", display: "inline-block" }}>
-            Go to Dashboard
+            Back to Home Page
           </Link>
         </div>
       </div>

@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { firstName, lastName, mobileNumber, email, password, role, targetCefrLevel, assessmentLanguage } = await req.json();
+    const { firstName, lastName, mobileNumber, email, password, role, targetCefrLevel, assessmentLanguage, allowedAttempts } = await req.json();
 
     if (!email || !password || !firstName || !lastName) {
       return NextResponse.json({ error: "All required fields must be filled" }, { status: 400 });
@@ -39,7 +39,8 @@ export async function POST(req: NextRequest) {
         password: hashedPassword, 
         role: role || "user", 
         targetCefrLevel: targetCefrLevel || null,
-        assessmentLanguage: assessmentLanguage || "english"
+        assessmentLanguage: assessmentLanguage || "english",
+        allowedAttempts: typeof allowedAttempts === "number" ? allowedAttempts : 1,
       },
     });
 

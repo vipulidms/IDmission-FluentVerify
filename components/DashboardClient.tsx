@@ -293,6 +293,9 @@ export default function DashboardClient({ session, assessments }: Props) {
   
   const userLang = (session?.user as any)?.assessmentLanguage || "english";
   const isAdmin = (session?.user as any)?.role === "admin";
+  const allowedAttempts = (session?.user as any)?.allowedAttempts ?? 1;
+  const completedAttempts = assessments.length;
+  const isAttemptExhausted = !isAdmin && completedAttempts >= allowedAttempts;
 
   if (selectedAssessment && isAdmin) {
     let integrityRiskLevel: "low" | "medium" | "high" = "low";
@@ -415,13 +418,15 @@ export default function DashboardClient({ session, assessments }: Props) {
               Track your language learning journey and performance insights.
             </p>
           </div>
-          <button
-            onClick={() => router.push(`/assessment/speaking?lang=${userLang}`)}
-            className="btn btn-primary"
-            style={{ flexShrink: 0 }}
-          >
-            🎤 New Assessment
-          </button>
+          {!isAdmin && isAttemptExhausted ? null : (
+            <button
+              onClick={() => router.push(`/assessment/speaking?lang=${userLang}`)}
+              className="btn btn-primary"
+              style={{ flexShrink: 0 }}
+            >
+              🎤 New Assessment
+            </button>
+          )}
         </div>
 
         {/* ─── Tabs ─── */}
@@ -439,6 +444,31 @@ export default function DashboardClient({ session, assessments }: Props) {
 
         {activeTab === "overview" && (
           <>
+            {isAttemptExhausted && (
+              <div 
+                className="glass-card animate-fadeIn" 
+                style={{ 
+                  padding: "20px 24px", 
+                  marginBottom: "28px", 
+                  borderLeft: "4px solid var(--brand-rose)", 
+                  background: "rgba(244, 63, 94, 0.05)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "16px"
+                }}
+              >
+                <div style={{ fontSize: "28px", lineHeight: 1 }}>⚠️</div>
+                <div style={{ flex: 1 }}>
+                  <h4 style={{ fontSize: "16px", fontWeight: 700, marginBottom: "4px", color: "var(--brand-rose)" }}>
+                    Assessment Limit Reached
+                  </h4>
+                  <p className="text-secondary" style={{ fontSize: "13px", margin: 0, lineHeight: "1.5" }}>
+                    You have completed all of your allowed assessment attempts ({completedAttempts} of {allowedAttempts} completed). Your responses have been submitted and will be communicated to you by the administrator shortly.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* ─── CEFR Profile Hero ─── */}
             {!isAdmin ? (
               /* Simple Candidate Workspace Overview */
@@ -482,15 +512,27 @@ export default function DashboardClient({ session, assessments }: Props) {
                       { lang: "english", skill: "speaking", label: "English Speaking", flag: "gb" },
                       { lang: "german", skill: "speaking", label: "German Speaking", flag: "de" },
                     ].filter(item => item.lang === userLang).map((item) => (
-                      <button
-                        key={`${item.lang}-${item.skill}`}
-                        onClick={() => router.push(`/assessment/${item.skill}?lang=${item.lang}`)}
-                        className="btn btn-primary"
-                        style={{ display: "flex", alignItems: "center", gap: "10px", justifyContent: "center", width: "100%", padding: "14px" }}
-                      >
-                        <Flag country={item.flag as any} size={16} />
-                        {skillIcons[item.skill]} Start {item.label} Test
-                      </button>
+                      isAttemptExhausted ? (
+                        <button
+                          key={`${item.lang}-${item.skill}`}
+                          disabled
+                          className="btn btn-outline"
+                          style={{ display: "flex", alignItems: "center", gap: "10px", justifyContent: "center", width: "100%", padding: "14px", opacity: 0.5, cursor: "not-allowed" }}
+                        >
+                          <Flag country={item.flag as any} size={16} />
+                          {skillIcons[item.skill]} Attempts Exhausted ({completedAttempts}/{allowedAttempts})
+                        </button>
+                      ) : (
+                        <button
+                          key={`${item.lang}-${item.skill}`}
+                          onClick={() => router.push(`/assessment/${item.skill}?lang=${item.lang}`)}
+                          className="btn btn-primary"
+                          style={{ display: "flex", alignItems: "center", gap: "10px", justifyContent: "center", width: "100%", padding: "14px" }}
+                        >
+                          <Flag country={item.flag as any} size={16} />
+                          {skillIcons[item.skill]} Start {item.label} Test
+                        </button>
+                      )
                     ))}
                     <div style={{ padding: "12px 14px", borderRadius: "10px", background: "rgba(255,255,255,0.03)", border: "1px dashed var(--border-subtle)", textAlign: "center", fontSize: "12px", color: "var(--text-muted)" }}>
                       ✍️ 👂 📖 Writing, Listening & Reading — <span style={{ color: "var(--text-brand)" }}>Coming Soon</span>

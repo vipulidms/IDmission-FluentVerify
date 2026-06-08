@@ -38,6 +38,7 @@ interface UserData {
   role: string;
   targetCefrLevel?: string | null;
   assessmentLanguage?: string;
+  allowedAttempts?: number;
   assessments: Assessment[];
 }
 
@@ -168,7 +169,9 @@ export default function AdminDashboardClient({ users }: Props) {
                       <div style={{ fontSize: "13px", color: "var(--text-muted)" }}>{user.email}</div>
                       {user.mobileNumber && <div style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "4px" }}>📱 {user.mobileNumber}</div>}
                     </td>
-                    <td style={{ padding: "20px", fontWeight: 600 }}>{user.attempts}</td>
+                    <td style={{ padding: "20px", fontWeight: 600, color: (user.attempts >= (user.allowedAttempts ?? 1)) ? "var(--brand-rose)" : "var(--text-primary)" }}>
+                      {user.attempts} / {user.allowedAttempts ?? 1}
+                    </td>
                     <td style={{ padding: "20px" }}>
                       {user.attempts > 0 ? (
                         <span className={`cefr-badge cefr-${user.latestCEFR}`}>

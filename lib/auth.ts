@@ -40,6 +40,7 @@ export const authOptions: NextAuthOptions = {
           image: user.image,
           role: user.role,
           assessmentLanguage: user.assessmentLanguage,
+          allowedAttempts: user.allowedAttempts,
         };
       },
     }),
@@ -50,6 +51,7 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id;
         token.role = user.role;
         token.assessmentLanguage = (user as any).assessmentLanguage;
+        token.allowedAttempts = (user as any).allowedAttempts;
       }
       return token;
     },
@@ -58,6 +60,7 @@ export const authOptions: NextAuthOptions = {
         (session.user as any).id = token.id;
         (session.user as any).role = token.role;
         (session.user as any).assessmentLanguage = token.assessmentLanguage;
+        (session.user as any).allowedAttempts = token.allowedAttempts;
       }
       return session;
     },

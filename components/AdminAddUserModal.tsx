@@ -15,6 +15,7 @@ export default function AdminAddUserModal({ onClose, onSuccess }: Props) {
   const [role, setRole] = useState("user");
   const [targetCefrLevel, setTargetCefrLevel] = useState("");
   const [assessmentLanguage, setAssessmentLanguage] = useState("english");
+  const [allowedAttempts, setAllowedAttempts] = useState<number | "">(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -27,7 +28,7 @@ export default function AdminAddUserModal({ onClose, onSuccess }: Props) {
       const res = await fetch("/api/admin/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ firstName, lastName, mobileNumber, email, password, role, targetCefrLevel: targetCefrLevel || null, assessmentLanguage }),
+        body: JSON.stringify({ firstName, lastName, mobileNumber, email, password, role, targetCefrLevel: targetCefrLevel || null, assessmentLanguage, allowedAttempts: allowedAttempts === "" ? 1 : Number(allowedAttempts) }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to add user");
@@ -96,6 +97,16 @@ export default function AdminAddUserModal({ onClose, onSuccess }: Props) {
                   <option value="english">English 🇬🇧</option>
                   <option value="german">German 🇩🇪</option>
                 </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Allowed Attempts</label>
+                <input 
+                  type="number" 
+                  className="form-input" 
+                  value={allowedAttempts} 
+                  onChange={e => setAllowedAttempts(e.target.value === "" ? "" : parseInt(e.target.value) || 0)} 
+                  required 
+                />
               </div>
             </div>
           </div>

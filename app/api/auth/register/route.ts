@@ -35,7 +35,8 @@ export async function POST(req: NextRequest) {
         password: hashedPassword, 
         role, 
         targetCefrLevel: targetCefrLevel || null,
-        assessmentLanguage: assessmentLanguage || "english"
+        assessmentLanguage: assessmentLanguage || "english",
+        allowedAttempts: 1,
       },
     });
 

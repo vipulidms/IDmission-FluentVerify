@@ -20,7 +20,15 @@ export async function POST(req: NextRequest) {
       userId = (session.user as { id?: string }).id || null;
       if (userId) {
         const userRec = await prisma.user.findUnique({ where: { id: userId } });
-        targetCefrLevel = userRec?.targetCefrLevel || null;
+        if (userRec) {
+          targetCefrLevel = userRec.targetCefrLevel || null;
+          if (userRec.role !== "admin") {
+            const completedCount = await prisma.assessment.count({ where: { userId } });
+            if (completedCount >= userRec.allowedAttempts) {
+              return NextResponse.json({ error: "You have exhausted your allowed assessment attempts." }, { status: 403 });
+            }
+          }
+        }
       }
     }
 

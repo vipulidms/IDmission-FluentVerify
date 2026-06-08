@@ -9,6 +9,7 @@ interface Props {
     mobileNumber: string | null;
     targetCefrLevel?: string | null;
     assessmentLanguage?: string;
+    allowedAttempts?: number;
   };
   onClose: () => void;
   onSuccess: () => void;
@@ -19,6 +20,7 @@ export default function AdminEditUserModal({ user, onClose, onSuccess }: Props) 
   const [mobileNumber, setMobileNumber] = useState(user.mobileNumber || "");
   const [targetCefrLevel, setTargetCefrLevel] = useState(user.targetCefrLevel || "");
   const [assessmentLanguage, setAssessmentLanguage] = useState(user.assessmentLanguage || "english");
+  const [allowedAttempts, setAllowedAttempts] = useState<number | "">(user.allowedAttempts ?? 1);
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -54,7 +56,7 @@ export default function AdminEditUserModal({ user, onClose, onSuccess }: Props) 
       const res = await fetch(`/api/admin/users/${user.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, mobileNumber, targetCefrLevel: targetCefrLevel || null, assessmentLanguage, password }),
+        body: JSON.stringify({ email, mobileNumber, targetCefrLevel: targetCefrLevel || null, assessmentLanguage, password, allowedAttempts: allowedAttempts === "" ? 1 : Number(allowedAttempts) }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to edit user");
@@ -108,6 +110,17 @@ export default function AdminEditUserModal({ user, onClose, onSuccess }: Props) 
                   <option value="english">English 🇬🇧</option>
                   <option value="german">German 🇩🇪</option>
                 </select>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Allowed Attempts</label>
+                <input 
+                  type="number" 
+                  className="form-input" 
+                  value={allowedAttempts} 
+                  onChange={e => setAllowedAttempts(e.target.value === "" ? "" : parseInt(e.target.value) || 0)} 
+                  required 
+                />
               </div>
 
               <div className="form-group" style={{ gridColumn: "1 / -1" }}>
