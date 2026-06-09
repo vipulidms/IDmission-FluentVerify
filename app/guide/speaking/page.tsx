@@ -7,7 +7,7 @@ export default function SpeakingGuidePage() {
   const [volume, setVolume] = useState(0);
   const [statusText, setStatusText] = useState("Click 'Start Test' and speak into your microphone.");
   const [statusColor, setStatusColor] = useState("var(--text-muted)");
-  
+
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -76,16 +76,16 @@ export default function SpeakingGuidePage() {
 
         // Dynamically guide the user based on volume level
         if (volPercent < 4) {
-          setStatusText("Silent (No sound detected) — Say something!");
+          setStatusText("Silent — Say something!");
           setStatusColor("var(--text-muted)");
         } else if (volPercent < 22) {
-          setStatusText("Whispering (Too Quiet) — Speak louder and clearer!");
+          setStatusText("Whispering — Speak louder and clearer!");
           setStatusColor("#f59e0b"); // Warning amber
         } else if (volPercent < 75) {
-          setStatusText("Optimal Volume (Perfect) — Great clarity!");
+          setStatusText("Optimal Volume — Great clarity!");
           setStatusColor("#10b981"); // Success green
         } else {
-          setStatusText("Too Loud — Try moving slightly away from the microphone.");
+          setStatusText("Too Loud — Move slightly away from the microphone.");
           setStatusColor("#f43f5e"); // Danger rose
         }
 
@@ -141,7 +141,7 @@ export default function SpeakingGuidePage() {
         <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: "32px", alignItems: "start" }}>
           {/* Left Column: Guidelines & Rules */}
           <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
-            
+
             {/* Critical Voice Constraint Card */}
             <div className="glass-card" style={{ padding: "32px", borderLeft: "4px solid #10b981", background: "linear-gradient(135deg, rgba(16,185,129,0.05) 0%, rgba(20,30,40,0.4) 100%)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "16px" }}>
@@ -219,7 +219,7 @@ export default function SpeakingGuidePage() {
               <p className="text-secondary" style={{ fontSize: "14px", lineHeight: "1.6", marginBottom: "20px" }}>
                 To maintain credibility, the platform monitors candidates using automatic webcam and activity detection. The following events trigger warnings and flag your score:
               </p>
-              
+
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
                 <div style={{ padding: "16px", background: "rgba(244,63,94,0.03)", border: "1px solid rgba(244,63,94,0.15)", borderRadius: "12px" }}>
                   <div style={{ fontWeight: 700, fontSize: "13px", marginBottom: "6px", display: "flex", alignItems: "center", gap: "6px" }}>
@@ -256,7 +256,7 @@ export default function SpeakingGuidePage() {
               }}>
                 🎤
               </div>
-              
+
               <h3 style={{ fontSize: "18px", fontWeight: 800, marginBottom: "8px" }}>Live Volume Tester</h3>
               <p className="text-secondary" style={{ fontSize: "13px", marginBottom: "24px" }}>
                 Grant microphone permissions and speak aloud to ensure your audio levels are set up for optimal grading.
