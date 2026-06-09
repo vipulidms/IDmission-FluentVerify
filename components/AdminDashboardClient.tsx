@@ -56,7 +56,7 @@ const skillIcons: Record<string, string> = {
 
 export default function AdminDashboardClient({ users }: Props) {
   const router = useRouter();
-  const [selectedAssessment, setSelectedAssessment] = useState<Assessment | null>(null);
+  const [selectedAssessment, setSelectedAssessment] = useState<(Assessment & { candidateName?: string }) | null>(null);
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [editUser, setEditUser] = useState<UserData | null>(null);
@@ -311,6 +311,8 @@ export default function AdminDashboardClient({ users }: Props) {
         onClose={() => setSelectedAssessment(null)}
         integrityRiskLevel={integrityRiskLevel}
         integrityReport={selectedAssessment.integrityReport}
+        candidateName={selectedAssessment.candidateName}
+        isAdminView={true}
       />
     );
   }
@@ -658,7 +660,12 @@ export default function AdminDashboardClient({ users }: Props) {
                                   return (
                                     <tr 
                                       key={assessment.id}
-                                      onClick={() => setSelectedAssessment(assessment)}
+                                      onClick={() => setSelectedAssessment({
+                                        ...assessment,
+                                        candidateName: user.firstName || user.lastName 
+                                          ? `${user.firstName || ""} ${user.lastName || ""}`.trim() 
+                                          : user.name || "Unknown Candidate"
+                                      })}
                                       className="cursor-pointer hover:bg-white/10 transition-colors"
                                       style={{ cursor: "pointer" }}
                                     >

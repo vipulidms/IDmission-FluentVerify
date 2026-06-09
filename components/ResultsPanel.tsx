@@ -42,6 +42,8 @@ interface Props {
   onClose?: () => void;
   integrityRiskLevel?: "low" | "medium" | "high";
   integrityReport?: string | null;
+  candidateName?: string | null;
+  isAdminView?: boolean;
 }
 
 const cefrColors: Record<string, string> = {
@@ -97,7 +99,19 @@ function CircularScore({ score, color }: { score: number; color: string }) {
   );
 }
 
-export default function ResultsPanel({ result, language, skill, prompt, onRetry, isHistoryView, onClose, integrityRiskLevel, integrityReport }: Props) {
+export default function ResultsPanel({
+  result,
+  language,
+  skill,
+  prompt,
+  onRetry,
+  isHistoryView,
+  onClose,
+  integrityRiskLevel,
+  integrityReport,
+  candidateName,
+  isAdminView,
+}: Props) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -222,7 +236,9 @@ export default function ResultsPanel({ result, language, skill, prompt, onRetry,
         <div className="breadcrumb">
           {isHistoryView ? (
             <>
-              <button onClick={onClose} style={{ cursor: "pointer", background: "none", border: "none", color: "inherit", padding: 0, font: "inherit" }}>Dashboard</button>
+              <button onClick={onClose} style={{ cursor: "pointer", background: "none", border: "none", color: "inherit", padding: 0, font: "inherit" }}>
+                {isAdminView ? "Leaderboard" : "Dashboard"}
+              </button>
               <span className="breadcrumb-sep">›</span>
               <span>Assessment Details</span>
             </>
@@ -256,7 +272,7 @@ export default function ResultsPanel({ result, language, skill, prompt, onRetry,
             </div>
           )}
           <h1 style={{ fontSize: "clamp(32px, 5vw, 52px)", fontWeight: 900, marginTop: "16px", marginBottom: "8px" }}>
-            {isHistoryView ? "Your " : "Your "}<span className="gradient-text">{isHistoryView ? "History" : "Results"}</span>
+            {candidateName ? `${candidateName}'s ` : "Your "}<span className="gradient-text">{isHistoryView ? "History" : "Results"}</span>
           </h1>
           <p className="text-secondary">{langLabel} · {skillLabel} Assessment</p>
         </div>
@@ -561,7 +577,7 @@ export default function ResultsPanel({ result, language, skill, prompt, onRetry,
         <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
           {isHistoryView ? (
             <button onClick={onClose} className="btn btn-primary btn-lg">
-              ← Back to Dashboard
+              {isAdminView ? "← Back to Leaderboard" : "← Back to Dashboard"}
             </button>
           ) : (
             <>
