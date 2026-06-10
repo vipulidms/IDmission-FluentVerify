@@ -49,9 +49,13 @@ function enforceCEFRConsistency(result: any): AssessmentResult {
   const range = ranges[cefr];
   let score = typeof result.overall_score === "number" ? result.overall_score : range.default;
 
+  // Add grace buffers to reduce strict clamping penalty
+  const allowedMax = cefr === "C2" ? range.max : range.max + 10;
+  const allowedMin = cefr === "A1" ? range.min : range.min - 5;
+
   // Clamp overall score
-  if (score < range.min || score > range.max) {
-    score = Math.max(range.min, Math.min(range.max, score));
+  if (score < allowedMin || score > allowedMax) {
+    score = Math.max(allowedMin, Math.min(allowedMax, score));
   }
   result.overall_score = score;
 
@@ -59,7 +63,7 @@ function enforceCEFRConsistency(result: any): AssessmentResult {
   if (result.sub_scores) {
     Object.keys(result.sub_scores).forEach((key) => {
       if (typeof result.sub_scores[key] === "number") {
-        result.sub_scores[key] = Math.max(range.min, Math.min(range.max, result.sub_scores[key]));
+        result.sub_scores[key] = Math.max(allowedMin, Math.min(allowedMax, result.sub_scores[key]));
       }
     });
   }
@@ -103,6 +107,11 @@ export async function assessWriting(
   
   CEFR levels: A1 (0-20), A2 (21-35), B1 (36-55), B2 (56-75), C1 (76-90), C2 (91-100)
   Score should reflect genuine CEFR assessment. Be specific and constructive.
+
+  HANDLING HIGHLY FLUENT/NATIVE WRITERS:
+  1. Native or highly fluent speakers writing naturally, using conversational/colloquial expressions, or common contractions MUST NOT be downgraded. Focus on structural accuracy, argument coherence, and natural lexical resource.
+  2. Highly fluent/native-level writing must be placed accurately in C1 (76-90) or C2 (91-100) based on their overall grammar, vocabulary depth, and coherence.
+
   CRITICAL RULE: If the user's response is completely off-topic, random, or ignores the prompt entirely, you MUST assign the lowest possible scores (A1, 0-10) and explicitly mention that the response was irrelevant in the detailed feedback.
   CRITICAL: The JSON above is purely an example of the structure. DO NOT copy the scores (e.g., 65) or text from the example. You MUST evaluate the response strictly on its own merits and provide genuine scores and feedback.`;
 
@@ -272,6 +281,11 @@ export async function assessSpeaking(
   }
   
   Note: Evaluate holistically based on grammar in transcription, vocabulary range, and likely fluency across all 5 parts. Be constructive and specific.
+
+  HANDLING SPEECH-TO-TEXT (STT) TRANSCRIPTIONS:
+  1. The user's response was transcribed using a browser speech-to-text API. It may lack punctuation, capitalization, or have occasional phonetic mishearings. DO NOT penalize the grammar, fluency, or coherence scores for these automated transcription artifacts. Focus on the underlying sentence structures, vocabulary, and semantic clarity.
+  2. Native or highly fluent speakers speaking casually, naturally, or using colloquial phrasing/contractions (e.g., "gonna", "wanna", conversational idioms) MUST NOT be downgraded. Evaluate their native-level flow and comfort, placing them accurately in C1 (76-90) or C2 (91-100) based on their overall proficiency.
+  
   CRITICAL RULE: Task Achievement is paramount. If the user's responses are completely off-topic, random nonsense, or ignore the provided prompts entirely, you MUST heavily penalize them, assign the lowest possible CEFR level (A1) and scores (0-10), and explicitly state that their answers were irrelevant to the questions.
   CRITICAL: The JSON above is purely an example of the structure. DO NOT copy the scores (e.g., 72) or text from the example. You MUST evaluate the response strictly on its own merits and provide genuine scores and feedback.`;
 
